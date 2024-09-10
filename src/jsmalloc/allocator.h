@@ -4,6 +4,7 @@
 
 #include "src/heap_factory.h"
 #include "src/heap_interface.h"
+#include "src/jsmalloc/util/assert.h"
 #include "src/jsmalloc/util/twiddle.h"
 
 namespace jsmalloc {
