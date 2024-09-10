@@ -4,69 +4,60 @@
 #include <cstdint>
 
 #include "src/jsmalloc/util/assert.h"
+#include "src/jsmalloc/util/twiddle.h"
 
 namespace jsmalloc {
 
-template <class T, class M>
-static inline constexpr ptrdiff_t offset_of(const M T::*member) {
-  return reinterpret_cast<ptrdiff_t>(&(reinterpret_cast<T*>(0)->*member));
-}
+template <typename T, ptrdiff_t Offset>
+class IntrusiveLinkedList;
 
-template <class T, class M>
-static inline constexpr T* owner_of(const M* ptr, const M T::*member) {
-  return reinterpret_cast<T*>(reinterpret_cast<intptr_t>(ptr) -
-                              offset_of(member));
-}
-
-template <typename T>
-class IntrusiveLinkedList {
+class LLNode {
  public:
-  class Node {
-    friend IntrusiveLinkedList;
+  LLNode() : LLNode(nullptr, nullptr) {}
 
-   public:
-    Node() : Node(nullptr, nullptr) {}
+ private:
+  template <typename, ptrdiff_t>
+  friend class IntrusiveLinkedList;
 
-   private:
-    Node(Node* prev, Node* next) : next_(next), prev_(prev) {}
+  LLNode(LLNode* prev, LLNode* next) : next_(next), prev_(prev) {}
 
-    /** Inserts `this` after `node`. */
-    void insert_after(Node& node) {
-      next_ = node.next_;
-      prev_ = &node;
-      DCHECK_NON_NULL(node.next_)->prev_ = this;
-      node.next_ = this;
-    }
+  /** Inserts `this` after `node`. */
+  void insert_after(LLNode& node) {
+    next_ = node.next_;
+    prev_ = &node;
+    DCHECK_NON_NULL(node.next_)->prev_ = this;
+    node.next_ = this;
+  }
 
-    /** Inserts `this` before `node`. */
-    void insert_before(Node& node) {
-      next_ = &node;
-      prev_ = node.prev_;
-      node.prev_ = this;
-      DCHECK_NON_NULL(prev_)->next_ = this;
-    }
+  /** Inserts `this` before `node`. */
+  void insert_before(LLNode& node) {
+    next_ = &node;
+    prev_ = node.prev_;
+    node.prev_ = this;
+    DCHECK_NON_NULL(prev_)->next_ = this;
+  }
 
-    void remove() {
-      DCHECK_NON_NULL(this->prev_)->next_ = this->next_;
-      DCHECK_NON_NULL(this->next_)->prev_ = this->prev_;
-      this->prev_ = nullptr;
-      this->next_ = nullptr;
-    }
+  void remove() {
+    DCHECK_NON_NULL(this->prev_)->next_ = this->next_;
+    DCHECK_NON_NULL(this->next_)->prev_ = this->prev_;
+    this->prev_ = nullptr;
+    this->next_ = nullptr;
+  }
 
-    T* item(Node T::*node_field) const {
-      return owner_of(this, node_field);
-    }
+  bool linked() const {
+    return next_ != nullptr;
+  }
 
-    bool linked() const {
-      return next_ != nullptr;
-    }
+  LLNode* next_ = nullptr;
+  LLNode* prev_ = nullptr;
+};
 
-    Node* next_ = nullptr;
-    Node* prev_ = nullptr;
-  };
+template <typename T, intptr_t Offset>
+class IntrusiveLinkedList {
+  friend LLNode;
 
-  explicit IntrusiveLinkedList(Node T::*node_field)
-      : node_field_(node_field), head_(&head_, &head_) {}
+ public:
+  explicit IntrusiveLinkedList() : head_(&head_, &head_) {}
 
   class Iterator {
     friend IntrusiveLinkedList;
@@ -91,27 +82,21 @@ class IntrusiveLinkedList {
     }
 
     T& operator*() {
-      return *curr_->item(node_field_);
+      return IntrusiveLinkedList<T, Offset>::Item(*curr_);
     }
 
    private:
-    explicit Iterator(Node& node, Node T::*node_field)
-        : curr_(&node), node_field_(node_field) {}
+    explicit Iterator(LLNode& node) : curr_(&node) {}
 
-    Node* curr_;
-    Node T::* const node_field_;
+    LLNode* curr_;
   };
 
-  size_t size() const {
-    return size_;
-  }
-
   Iterator begin() {
-    return Iterator(*head_.next_, node_field_);
+    return Iterator(*head_.next_);
   }
 
   Iterator end() {
-    return Iterator(head_, node_field_);
+    return Iterator(head_);
   }
 
   /**
@@ -119,8 +104,17 @@ class IntrusiveLinkedList {
    *
    * Assumes that `el` _could_ only be in this list.
    */
-  bool contains(T& el) {
-    return (el.*node_field_).linked();
+  bool empty() const {
+    return head_.next_ == &head_;
+  }
+
+  /**
+   * Returns whether `el` is in this list.
+   *
+   * Assumes that `el` _could_ only be in this list.
+   */
+  bool contains(T& el) const {
+    return Node(el).linked();
   }
 
   /**
@@ -129,37 +123,49 @@ class IntrusiveLinkedList {
    * Assumes that `el` is in the list.
    */
   void remove(T& el) {
-    (el.*node_field_).remove();
-    size_--;
+    Node(el).remove();
   }
 
   void insert_back(T& el) {
-    (el.*node_field_).insert_before(head_);
-    size_++;
+    Node(el).insert_before(head_);
   }
 
   void insert_front(T& el) {
-    (el.*node_field_).insert_after(head_);
-    size_++;
+    Node(el).insert_after(head_);
   }
 
   T* front() {
-    if (size_ == 0) {
+    if (empty()) {
       return nullptr;
     }
-    return head_.next_->item(node_field_);
+    return &Item(*head_.next_);
   }
 
   T* back() {
-    if (size_ == 0) {
+    if (empty()) {
       return nullptr;
     }
-    return head_.prev_->item(node_field_);
+    return &Item(*head_.prev_);
   }
 
-  Node T::* const node_field_;
-  Node head_;
-  size_t size_ = 0;
+ private:
+  static constexpr T& Item(LLNode& node) {
+    return *twiddle::AddPtrOffset<T>(&node, -Offset);
+  }
+
+  static constexpr LLNode& Node(T& item) {
+    return *twiddle::AddPtrOffset<LLNode>(&item, Offset);
+  }
+
+  LLNode head_;
 };
+
+#define DEFINE_LINKED_LIST_NODE(ClassName, ItemName, node_field) \
+  ::jsmalloc::LLNode node_field;                                 \
+  friend ClassName;
+
+#define DEFINE_LINKED_LIST(ClassName, ItemName, node_field) \
+  class ClassName : public ::jsmalloc::IntrusiveLinkedList< \
+                        ItemName, offsetof(ItemName, node_field)> {}
 
 }  // namespace jsmalloc

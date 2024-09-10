@@ -15,6 +15,8 @@ struct FreeBlockFooter {
   FreeBlock* block;
 };
 
+class FreeBlockList;
+
 /**
  * A free block.
  */
@@ -60,17 +62,16 @@ class FreeBlock {
   /** Consumes the next block. */
   void ConsumeNextBlock();
 
-  class List : public IntrusiveLinkedList<FreeBlock> {
-   public:
-    List() : IntrusiveLinkedList<FreeBlock>(&FreeBlock::list_node_){};
-  };
-
  private:
   FreeBlock(size_t size, bool prev_block_is_free);
 
   BlockHeader header_;
-  IntrusiveLinkedList<FreeBlock>::Node list_node_;
+
+  DEFINE_LINKED_LIST_NODE(FreeBlockList, FreeBlock, node_);
+  friend FreeBlockList;
 };
+
+DEFINE_LINKED_LIST(FreeBlockList, FreeBlock, node_);
 
 }  // namespace blocks
 }  // namespace jsmalloc

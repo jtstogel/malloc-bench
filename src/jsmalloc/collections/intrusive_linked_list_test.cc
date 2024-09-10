@@ -1,5 +1,6 @@
 #include "src/jsmalloc/collections/intrusive_linked_list.h"
 
+#include <cstddef>
 #include <vector>
 
 #include "gmock/gmock.h"
@@ -7,25 +8,30 @@
 
 namespace jsmalloc {
 
+class TestItemList;
+
 struct TestItem {
   uint64_t value;
 
-  IntrusiveLinkedList<TestItem>::Node node;
+  DEFINE_LINKED_LIST_NODE(TestItemList, TestItem, node);
 };
 
+DEFINE_LINKED_LIST(TestItemList, TestItem, node);
+
 TEST(TestIntrusiveLinkedList, SingleElement) {
-  IntrusiveLinkedList<TestItem> ll(&TestItem::node);
   TestItem fst{ .value = 1 };
+
+  TestItemList ll;
   ll.insert_back(fst);
 
-  EXPECT_EQ(ll.size(), 1);
+  EXPECT_FALSE(ll.empty());
   EXPECT_EQ(ll.front(), &fst);
   EXPECT_EQ(ll.back(), &fst);
 }
 
 TEST(TestIntrusiveLinkedList, Empty) {
-  IntrusiveLinkedList<TestItem> ll(&TestItem::node);
-  EXPECT_EQ(ll.size(), 0);
+  TestItemList ll;
+  EXPECT_TRUE(ll.empty());
   EXPECT_EQ(ll.front(), nullptr);
   EXPECT_EQ(ll.back(), nullptr);
 }
@@ -36,7 +42,7 @@ TEST(TestIntrusiveLinkedList, Iterates) {
     TestItem{ .value = 2 },
     TestItem{ .value = 3 },
   };
-  IntrusiveLinkedList<TestItem> ll(&TestItem::node);
+  TestItemList ll;
   for (auto& v : vals) {
     ll.insert_back(v);
   }
@@ -54,7 +60,7 @@ TEST(TestIntrusiveLinkedList, SupportsDeletion) {
     TestItem{ .value = 2 },
     TestItem{ .value = 3 },
   };
-  IntrusiveLinkedList<TestItem> ll(&TestItem::node);
+  TestItemList ll;
   for (auto& v : vals) {
     ll.insert_back(v);
   }

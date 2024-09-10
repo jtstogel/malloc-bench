@@ -64,7 +64,7 @@ constexpr uint32_t DataSizeForSizeClass(uint32_t size_class) {
 SmallBlockAllocator::SmallBlockAllocator(FreeBlockAllocator& allocator)
     : allocator_(allocator) {}
 
-SmallBlock::List& SmallBlockAllocator::SmallBlockList(size_t data_size) {
+SmallBlockList& SmallBlockAllocator::GetSmallBlockList(size_t data_size) {
   uint32_t size_class = small::SizeClass(data_size);
   return small_block_lists_[size_class];
 }
@@ -84,8 +84,7 @@ SmallBlock* SmallBlockAllocator::NewSmallBlock(size_t data_size) {
 }
 
 void* SmallBlockAllocator::Allocate(size_t size) {
-  uint32_t size_class = small::SizeClass(size);
-  SmallBlock::List& allocable_block_list = small_block_lists_[size_class];
+  SmallBlockList& allocable_block_list = GetSmallBlockList(size);
 
   SmallBlock* block = allocable_block_list.front();
 
@@ -123,8 +122,7 @@ void SmallBlockAllocator::Free(void* ptr) {
   // If the block was full, then we would have removed it from its
   // freelist. Add it back now.
   if (block->IsFull()) {
-    uint32_t size_class = small::SizeClass(block->DataSize());
-    SmallBlock::List& allocable_block_list = small_block_lists_[size_class];
+    SmallBlockList& allocable_block_list = GetSmallBlockList(block->DataSize());
     allocable_block_list.insert_back(*block);
   }
 
@@ -134,7 +132,7 @@ void SmallBlockAllocator::Free(void* ptr) {
   // Remove it from our datastructures and
   // return it to the free block allocator.
   if (block->IsEmpty()) {
-    SmallBlock::List& allocable_block_list = small_block_lists_[size_class];
+    SmallBlockList& allocable_block_list = small_block_lists_[size_class];
     allocable_block_list.remove(*block);
     allocator_.Free(hdr);
   }
