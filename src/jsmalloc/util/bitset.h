@@ -115,7 +115,7 @@ class MultiLevelBitSet {
 
     size_t quot = pos / SecondLevel::kMaxBits;
     size_t rem = pos % SecondLevel::kMaxBits;
-    SecondLevel* second_level = GetMutSecondLevel(quot);
+    SecondLevel* second_level = GetSecondLevel(quot);
     second_level->set(rem, value);
 
     bool full = second_level->countr_one() == SecondLevel::kMaxBits;
@@ -143,7 +143,7 @@ class MultiLevelBitSet {
   }
 
  private:
-  SecondLevel* GetMutSecondLevel(size_t idx) {
+  SecondLevel* GetSecondLevel(size_t idx) {
     return reinterpret_cast<SecondLevel*>(
         &second_level_[kMaxSecondLevelSize * idx]);
   }

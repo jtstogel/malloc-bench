@@ -67,20 +67,20 @@ class SmallBlock {
   using BitSet = BitSet1024;
 
   size_t BinSize() const;
-  int FreeBinIndex() const;
-
-  void MarkBinFree(int index);
-  void MarkBinUsed(int index);
 
   void* DataPtrForBinIndex(int index);
   int BinIndexForDataPtr(void* ptr) const;
 
-  uint8_t* MutableDataRegion();
+  uint8_t* DataRegion();
   const uint8_t* DataRegion() const;
 
-  BitSet* MutableUsedBinBitSet();
+  void MarkBinFree(int index);
+  void MarkBinUsed(int index);
+
+  BitSet* UsedBinBitSet();
   const BitSet* UsedBinBitSet() const;
   size_t UsedBinBitSetSize() const;
+  int FreeBinIndex() const;
 
   BlockHeader header_;
   uint16_t bin_size_;

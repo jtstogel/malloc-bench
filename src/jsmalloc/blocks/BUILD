@@ -31,8 +31,10 @@ cc_library(
         ":sentinel_block_allocator",
         "//src/jsmalloc:allocator",
         "//src/jsmalloc/collections:intrusive_linked_list",
+        "//src/jsmalloc/collections:rbtree",
         "//src/jsmalloc/util:assert",
         "//src/jsmalloc/util:math",
+        "//src/jsmalloc/util:twiddle",
     ],
 )
 
@@ -92,6 +94,7 @@ cc_library(
         ":sentinel_block_allocator",
         "//src/jsmalloc:allocator",
         "//src/jsmalloc/collections:intrusive_linked_list",
+        "//src/jsmalloc/collections:rbtree",
         "//src/jsmalloc/util:assert",
         "//src/jsmalloc/util:math",
     ],

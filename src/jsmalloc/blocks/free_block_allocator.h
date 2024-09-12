@@ -32,7 +32,8 @@ class FreeBlockAllocator {
   FreeBlock* FindBestFit(size_t size);
 
   SentinelBlockHeap& heap_;
-  FreeBlock::List free_blocks_;
+  // FreeBlock::List free_blocks_;
+  FreeBlock::Tree free_blocks_;
 };
 
 namespace testing {

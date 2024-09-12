@@ -18,3 +18,14 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_library(
+    name = "rbtree",
+    hdrs = ["rbtree.h"],
+    srcs = ["rbtree.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/jsmalloc/util:assert",
+        "//src/jsmalloc/util:twiddle",
+    ],
+)

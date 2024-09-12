@@ -6,6 +6,8 @@
 #include "src/jsmalloc/blocks/block.h"
 #include "src/jsmalloc/blocks/sentinel_block_allocator.h"
 #include "src/jsmalloc/collections/intrusive_linked_list.h"
+#include "src/jsmalloc/collections/rbtree.h"
+#include "src/jsmalloc/util/twiddle.h"
 
 namespace jsmalloc {
 namespace blocks {
@@ -62,13 +64,37 @@ class FreeBlock {
   /** Consumes the next block. */
   void ConsumeNextBlock();
 
-  class List : public IntrusiveLinkedList<FreeBlock, List> {
+  // class List : public IntrusiveLinkedList<FreeBlock, List> {
+  //  public:
+  //   constexpr static Node* GetNode(FreeBlock* item) {
+  //     return &item->free_list_node_;
+  //   }
+  //   constexpr static FreeBlock* GetItem(Node* node) {
+  //     return twiddle::OwnerOf(node, &FreeBlock::free_list_node_);
+  //   }
+  // };
+
+  class TreeComparator {
    public:
-    constexpr static Node* GetNode(FreeBlock* item) {
-      return &item->free_list_node_;
+    bool operator()(const FreeBlock& lhs, const FreeBlock& rhs) const {
+      return lhs.BlockSize() < rhs.BlockSize();
     }
-    constexpr static FreeBlock* GetItem(Node* node) {
-      return twiddle::OwnerOf(node, &FreeBlock::free_list_node_);
+  };
+
+  class Tree : public RbTree<FreeBlock, Tree, TreeComparator> {
+   public:
+    class Comparator {
+      bool operator()(const FreeBlock& lhs, const FreeBlock& rhs) const {
+        return lhs.BlockSize() < rhs.BlockSize();
+      }
+    };
+
+    static constexpr RbNode* GetNode(FreeBlock* block) {
+      return &block->free_tree_node_;
+    }
+
+    static constexpr FreeBlock* GetItem(RbNode* node) {
+      return twiddle::OwnerOf(node, &FreeBlock::free_tree_node_);
     }
   };
 
@@ -76,8 +102,8 @@ class FreeBlock {
   FreeBlock(size_t size, bool prev_block_is_free);
 
   BlockHeader header_;
-  IntrusiveLinkedList<FreeBlock, List>::Node free_list_node_;
-  friend FreeBlockList;
+  // IntrusiveLinkedList<FreeBlock, List>::Node free_list_node_;
+  RbNode free_tree_node_;
 };
 
 }  // namespace blocks

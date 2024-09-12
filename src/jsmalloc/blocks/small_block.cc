@@ -1,6 +1,5 @@
 #include "src/jsmalloc/blocks/small_block.h"
 
-#include <bit>
 #include <cstddef>
 
 #include "src/jsmalloc/blocks/block.h"
@@ -42,7 +41,7 @@ bool SmallBlock::IsEmpty() const {
 }
 
 void* SmallBlock::DataPtrForBinIndex(int index) {
-  return &MutableDataRegion()[index * bin_size_];
+  return &DataRegion()[index * bin_size_];
 }
 
 int SmallBlock::BinIndexForDataPtr(void* ptr) const {
@@ -70,15 +69,15 @@ size_t SmallBlock::UsedBinBitSetSize() const {
 
 void SmallBlock::MarkBinFree(int index) {
   used_bin_count_--;
-  MutableUsedBinBitSet()->set(index, false);
+  UsedBinBitSet()->set(index, false);
 }
 
 void SmallBlock::MarkBinUsed(int index) {
   used_bin_count_++;
-  MutableUsedBinBitSet()->set(index, true);
+  UsedBinBitSet()->set(index, true);
 }
 
-uint8_t* SmallBlock::MutableDataRegion() {
+uint8_t* SmallBlock::DataRegion() {
   return &data_[UsedBinBitSetSize()];
 }
 
@@ -86,7 +85,7 @@ const uint8_t* SmallBlock::DataRegion() const {
   return &data_[UsedBinBitSetSize()];
 }
 
-SmallBlock::BitSet* SmallBlock::MutableUsedBinBitSet() {
+SmallBlock::BitSet* SmallBlock::UsedBinBitSet() {
   return reinterpret_cast<BitSet*>(data_);
 }
 
