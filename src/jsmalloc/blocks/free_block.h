@@ -15,6 +15,8 @@ struct FreeBlockFooter {
   FreeBlock* block;
 };
 
+class FreeBlockList;
+
 /**
  * A free block.
  */
@@ -60,16 +62,22 @@ class FreeBlock {
   /** Consumes the next block. */
   void ConsumeNextBlock();
 
-  class List : public IntrusiveLinkedList<FreeBlock> {
+  class List : public IntrusiveLinkedList<FreeBlock, List> {
    public:
-    List() : IntrusiveLinkedList<FreeBlock>(&FreeBlock::list_node_){};
+    constexpr static Node* GetNode(FreeBlock* item) {
+      return &item->free_list_node_;
+    }
+    constexpr static FreeBlock* GetItem(Node* node) {
+      return twiddle::OwnerOf(node, &FreeBlock::free_list_node_);
+    }
   };
 
  private:
   FreeBlock(size_t size, bool prev_block_is_free);
 
   BlockHeader header_;
-  IntrusiveLinkedList<FreeBlock>::Node list_node_;
+  IntrusiveLinkedList<FreeBlock, List>::Node free_list_node_;
+  friend FreeBlockList;
 };
 
 }  // namespace blocks

@@ -50,11 +50,14 @@ class SmallBlock {
   /** The size of data this block can allocate. */
   size_t DataSize() const;
 
-  /** A list of `SmallBlock` values. */
-  class List : public IntrusiveLinkedList<SmallBlock> {
+  class List : public IntrusiveLinkedList<SmallBlock, List> {
    public:
-    List()
-        : jsmalloc::IntrusiveLinkedList<SmallBlock>(&SmallBlock::list_node_) {}
+    constexpr static Node* GetNode(SmallBlock* item) {
+      return &item->list_node_;
+    }
+    constexpr static SmallBlock* GetItem(Node* node) {
+      return twiddle::OwnerOf(node, &SmallBlock::list_node_);
+    }
   };
 
  private:
@@ -82,7 +85,7 @@ class SmallBlock {
   BlockHeader header_;
   uint16_t bin_size_;
   uint16_t bin_count_;
-  IntrusiveLinkedList<SmallBlock>::Node list_node_;
+  List::Node list_node_;
   uint16_t used_bin_count_ = 0;
   alignas(16) uint8_t data_[];
 };

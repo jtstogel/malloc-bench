@@ -31,7 +31,7 @@ FreeBlock* FreeBlockAllocator::Allocate(size_t size) {
   FreeBlock* best_fit = FindBestFit(size);
   if (best_fit != nullptr) {
     FreeBlock& free_block = *best_fit;
-    free_blocks_.remove(free_block);
+    FreeBlock::List::unlink(free_block);
     FreeBlock* remainder = free_block.MarkUsed(size);
     // Don't bother storing small free blocks.
     // Small malloc sizes will be serviced by SmallBlockAllocator anyway.
@@ -54,16 +54,16 @@ void FreeBlockAllocator::Free(BlockHeader* block) {
 
   FreeBlock* next_free_block = free_block->NextBlockIfFree();
   if (next_free_block != nullptr) {
-    if (free_blocks_.contains(*next_free_block)) {
-      free_blocks_.remove(*next_free_block);
+    if (FreeBlock::List::is_linked(*next_free_block)) {
+      FreeBlock::List::unlink(*next_free_block);
     }
     free_block->ConsumeNextBlock();
   }
 
   FreeBlock* prev_free_block = free_block->PrevBlockIfFree();
   if (prev_free_block != nullptr) {
-    if (free_blocks_.contains(*prev_free_block)) {
-      free_blocks_.remove(*prev_free_block);
+    if (FreeBlock::List::is_linked(*prev_free_block)) {
+      FreeBlock::List::unlink(*prev_free_block);
     }
     prev_free_block->ConsumeNextBlock();
     free_block = prev_free_block;

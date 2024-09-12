@@ -35,7 +35,7 @@ class SmallBlockAllocator {
       kMaxDataSizePerSizeClass[kSizeClasses - 1];
 
  private:
-  SmallBlock::List& SmallBlockList(size_t data_size);
+  SmallBlock::List& GetSmallBlockList(size_t data_size);
   SmallBlock* NewSmallBlock(size_t data_size);
 
   FreeBlockAllocator& allocator_;

@@ -3,4 +3,3 @@ build --features=layering_check
 build --cxxopt=-std=c++20
 build:profile --copt=-O2 --linkopt=-lprofiler --copt="-DNDEBUG=1" --copt=-g3
 build:opt -c opt --copt="-DNDEBUG=1" --features=thin_lto
-
