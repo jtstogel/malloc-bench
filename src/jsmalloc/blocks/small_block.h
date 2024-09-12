@@ -13,7 +13,6 @@ namespace jsmalloc {
 namespace blocks {
 
 class SmallBlockHelper;
-class SmallBlockList;
 
 class SmallBlock {
  public:
@@ -51,6 +50,16 @@ class SmallBlock {
   /** The size of data this block can allocate. */
   size_t DataSize() const;
 
+  class List : public IntrusiveLinkedList<SmallBlock, List> {
+   public:
+    constexpr static Node* GetNode(SmallBlock* item) {
+      return &item->list_node_;
+    }
+    constexpr static SmallBlock* GetItem(Node* node) {
+      return twiddle::OwnerOf(node, &SmallBlock::list_node_);
+    }
+  };
+
  private:
   SmallBlock(size_t block_size, bool prev_block_is_free, size_t bin_size,
              size_t bin_count);
@@ -76,12 +85,10 @@ class SmallBlock {
   BlockHeader header_;
   uint16_t bin_size_;
   uint16_t bin_count_;
-  DEFINE_LINKED_LIST_NODE(SmallBlockList, SmallBlock, list_node_);
+  List::Node list_node_;
   uint16_t used_bin_count_ = 0;
   alignas(16) uint8_t data_[];
 };
-
-DEFINE_LINKED_LIST(SmallBlockList, SmallBlock, list_node_);
 
 }  // namespace blocks
 }  // namespace jsmalloc

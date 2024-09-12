@@ -35,11 +35,11 @@ class SmallBlockAllocator {
       kMaxDataSizePerSizeClass[kSizeClasses - 1];
 
  private:
-  SmallBlockList& GetSmallBlockList(size_t data_size);
+  SmallBlock::List& GetSmallBlockList(size_t data_size);
   SmallBlock* NewSmallBlock(size_t data_size);
 
   FreeBlockAllocator& allocator_;
-  SmallBlockList small_block_lists_[kSizeClasses];
+  SmallBlock::List small_block_lists_[kSizeClasses];
 };
 
 }  // namespace blocks

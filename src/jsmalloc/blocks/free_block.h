@@ -62,16 +62,23 @@ class FreeBlock {
   /** Consumes the next block. */
   void ConsumeNextBlock();
 
+  class List : public IntrusiveLinkedList<FreeBlock, List> {
+   public:
+    constexpr static Node* GetNode(FreeBlock* item) {
+      return &item->free_list_node_;
+    }
+    constexpr static FreeBlock* GetItem(Node* node) {
+      return twiddle::OwnerOf(node, &FreeBlock::free_list_node_);
+    }
+  };
+
  private:
   FreeBlock(size_t size, bool prev_block_is_free);
 
   BlockHeader header_;
-
-  DEFINE_LINKED_LIST_NODE(FreeBlockList, FreeBlock, node_);
+  IntrusiveLinkedList<FreeBlock, List>::Node free_list_node_;
   friend FreeBlockList;
 };
-
-DEFINE_LINKED_LIST(FreeBlockList, FreeBlock, node_);
 
 }  // namespace blocks
 }  // namespace jsmalloc
