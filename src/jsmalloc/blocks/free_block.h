@@ -64,15 +64,15 @@ class FreeBlock {
   /** Consumes the next block. */
   void ConsumeNextBlock();
 
-  // class List : public IntrusiveLinkedList<FreeBlock, List> {
-  //  public:
-  //   constexpr static Node* GetNode(FreeBlock* item) {
-  //     return &item->free_list_node_;
-  //   }
-  //   constexpr static FreeBlock* GetItem(Node* node) {
-  //     return twiddle::OwnerOf(node, &FreeBlock::free_list_node_);
-  //   }
-  // };
+  class List : public IntrusiveLinkedList<FreeBlock, List> {
+   public:
+    constexpr static Node* GetNode(FreeBlock* item) {
+      return &item->free_list_node_;
+    }
+    constexpr static FreeBlock* GetItem(Node* node) {
+      return twiddle::OwnerOf(node, &FreeBlock::free_list_node_);
+    }
+  };
 
   class TreeComparator {
    public:
@@ -102,7 +102,7 @@ class FreeBlock {
   FreeBlock(size_t size, bool prev_block_is_free);
 
   BlockHeader header_;
-  // IntrusiveLinkedList<FreeBlock, List>::Node free_list_node_;
+  List::Node free_list_node_;
   RbNode free_tree_node_;
 };
 
