@@ -231,4 +231,65 @@ using BitSet1024 = internal::MultiLevelBitSet<uint32_t, BitSet32>;
 using BitSet4096 = internal::MultiLevelBitSet<uint64_t, BitSet64>;
 using BitSet262144 = internal::MultiLevelBitSet<uint64_t, BitSet4096>;
 
+/**
+ * WOW is this ugly.
+ */
+template <size_t N>
+class BitSet {
+ public:
+  BitSet() {
+    T::Init(data_, N);
+  }
+
+  void set(size_t pos, bool value = true) {
+    return reinterpret_cast<T*>(data_)->set(pos, value);
+  }
+
+  bool test(size_t pos) const {
+    return reinterpret_cast<const T*>(data_)->test(pos);
+  }
+
+  size_t countr_one() const {
+    return reinterpret_cast<const T*>(data_)->countr_one();
+  }
+
+ private:
+  using T = std::conditional<
+      N <= 32, BitSet32,
+      typename std::conditional<
+          N <= 64, BitSet64,
+          typename std::conditional<
+              N <= 1024, BitSet1024,
+              typename std::conditional<
+                  N <= 4096, BitSet4096,
+                  typename std::conditional<N <= 262144, BitSet262144, void>::
+                      // Death Star #2
+                      //
+                      //                      ::<type>::
+                      //               ::<type::<type>::type>::
+                      //        ::<type::<type::<type>::type>::type>::
+                      // ::<type::<type::<type::<type>::type>::type>::type>::
+                      //        ::<type::<type::<type>::type>::type>::
+                      //               ::<type::<type>::type>::
+                      //                      ::<type>::
+                      //                     //
+                      //                    //
+                      //                   // *pew pew*
+                      //                  //
+                      //                 //
+                      //                //    ...this time, it has no weakness
+                      //               //
+                      //              //
+                      //             //
+                      //        _d^^^^b_  Their cries echoed among The Force:
+                      //      .d'      'b.
+                      //     .p   HOF2   q.  *there must be a less violent way!
+                      //      'q.      .p'  *nooo, not... Darth Template!*
+                      //        ^q____p^   *ahhhhh arghhhh, why, oh why!*
+                      //
+                  type>::type>::type>::type>::type;
+
+  uint8_t data_[T::RequiredSize(N)];
+};
+
 }  // namespace jsmalloc
