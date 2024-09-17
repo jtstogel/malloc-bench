@@ -1,7 +1,6 @@
 #include "src/jsmalloc/blocks/small_block_allocator.h"
 
 #include <cstdint>
-#include <exception>
 
 #include "src/jsmalloc/blocks/block.h"
 #include "src/jsmalloc/blocks/fixed_size_free_block_allocator.h"
@@ -12,25 +11,6 @@ namespace jsmalloc {
 namespace blocks {
 
 namespace small {
-
-/** Returns a mask of all ones if start<=n<end, or 0 otherwise. */
-constexpr uint32_t CaseMask(uint32_t n, uint32_t start, uint32_t end) {
-  return static_cast<uint32_t>(0) -
-         static_cast<uint32_t>((start <= n) && (n < end));
-}
-
-/** Returns the size class that `data_size` belongs to. */
-static constexpr uint32_t SizeClass(uint32_t data_size) {
-  for (uint32_t cls = 0; cls < SmallBlockAllocator::kSizeClasses; cls++) {
-    if (data_size <= SmallBlockAllocator::kMaxDataSizePerSizeClass[cls]) {
-      return cls;
-    }
-  }
-  std::terminate();
-}
-
-static_assert(SizeClass(SmallBlockAllocator::kMaxDataSize) + 1 ==
-              SmallBlockAllocator::kSizeClasses);
 
 /**
  * Returns the number of bins to use in a SmallBlock for a given size_class.

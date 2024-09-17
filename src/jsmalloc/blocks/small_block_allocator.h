@@ -9,6 +9,18 @@
 namespace jsmalloc {
 namespace blocks {
 
+namespace small {
+
+/** Returns the size class that `data_size` belongs to. */
+static constexpr uint32_t SizeClass(uint32_t data_size) {
+  if (data_size <= 8) {
+    return 0;
+  }
+  return (data_size + 15) / 16;
+}
+
+}  // namespace small
+
 /**
  * A malloc that only services small sizes of data.
  */

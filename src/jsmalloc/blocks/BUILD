@@ -165,6 +165,17 @@ cc_library(
     ],
 )
 
+cc_test(
+    name = "small_block_allocator_test",
+    srcs = ["small_block_allocator_test.cc"],
+    deps = [
+        ":small_block_allocator",
+        "//src/jsmalloc:allocator",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 cc_library(
     name = "free_block_allocator",
     srcs = ["free_block_allocator.cc"],
