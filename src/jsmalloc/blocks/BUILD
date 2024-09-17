@@ -128,6 +128,7 @@ cc_library(
         "//src/jsmalloc/util:assert",
         "//src/jsmalloc/util:bitset",
         "//src/jsmalloc/util:math",
+        "//src/jsmalloc/util:twiddle",
     ],
 )
 

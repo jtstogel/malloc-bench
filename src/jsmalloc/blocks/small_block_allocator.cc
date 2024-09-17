@@ -5,8 +5,6 @@
 
 #include "src/jsmalloc/blocks/block.h"
 #include "src/jsmalloc/blocks/fixed_size_free_block_allocator.h"
-#include "src/jsmalloc/blocks/free_block.h"
-#include "src/jsmalloc/blocks/free_block_allocator.h"
 #include "src/jsmalloc/blocks/small_block.h"
 #include "src/jsmalloc/util/assert.h"
 

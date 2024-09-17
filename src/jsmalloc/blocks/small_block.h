@@ -3,11 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "src/jsmalloc/blocks/block.h"
-#include "src/jsmalloc/blocks/free_block.h"
 #include "src/jsmalloc/collections/intrusive_linked_list.h"
 #include "src/jsmalloc/util/bitset.h"
 #include "src/jsmalloc/util/math.h"
+#include "src/jsmalloc/util/twiddle.h"
 
 namespace jsmalloc {
 namespace blocks {

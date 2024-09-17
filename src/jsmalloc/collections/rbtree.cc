@@ -1,7 +1,5 @@
 #include "src/jsmalloc/collections/rbtree.h"
 
-#include <optional>
-
 namespace jsmalloc {
 
 namespace {

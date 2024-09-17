@@ -29,11 +29,8 @@ class IntrusiveStack {
     head_.next_ = node;
   }
 
-  /** Returns the f */
   Item* peek() {
-    if (empty()) {
-      return nullptr;
-    }
+    DCHECK_FALSE(empty());
     return Accessor::GetItem(head_.next_);
   }
 
