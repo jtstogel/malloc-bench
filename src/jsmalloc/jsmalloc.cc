@@ -33,13 +33,6 @@ class FreeBlockHeap {
     sentinel_block_heap_.Init();
   }
 
-  bool Contains(void* ptr) {
-    return twiddle::PtrValue(ptr) >=
-               twiddle::PtrValue(sentinel_block_heap_.Start()) &&
-           twiddle::PtrValue(ptr) <
-               twiddle::PtrValue(sentinel_block_heap_.End());
-  }
-
  private:
   HeapAdaptor heap_adaptor_;
   blocks::SentinelBlockHeap sentinel_block_heap_;
@@ -54,18 +47,17 @@ class HeapGlobals {
       : heap_factory_(heap_factory),
         large_block_heap_(large_block_heap),
         large_block_allocator_(large_block_heap_.FreeBlockAllocator()),
-        small_block_heap_(small_block_heap),
-        small_block_allocator_(small_block_heap_.FreeBlockAllocator()) {}
+        small_block_heap_(&small_block_heap),
+        small_block_allocator_(small_block_heap_) {}
 
   void Init() {
     large_block_heap_.Init();
-    small_block_heap_.Init();
   }
 
   bench::HeapFactory& heap_factory_;
   FreeBlockHeap large_block_heap_;
   blocks::LargeBlockAllocator large_block_allocator_;
-  FreeBlockHeap small_block_heap_;
+  HeapAdaptor small_block_heap_;
   blocks::SmallBlockAllocator small_block_allocator_;
 };
 

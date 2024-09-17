@@ -2,10 +2,8 @@
 
 #include <cstddef>
 
-#include "src/jsmalloc/allocator.h"
 #include "src/jsmalloc/blocks/block.h"
 #include "src/jsmalloc/blocks/sentinel_block_allocator.h"
-#include "src/jsmalloc/collections/intrusive_linked_list.h"
 #include "src/jsmalloc/collections/rbtree.h"
 #include "src/jsmalloc/util/twiddle.h"
 
@@ -64,16 +62,6 @@ class FreeBlock {
   /** Consumes the next block. */
   void ConsumeNextBlock();
 
-  // class List : public IntrusiveLinkedList<FreeBlock, List> {
-  //  public:
-  //   constexpr static Node* GetNode(FreeBlock* item) {
-  //     return &item->free_list_node_;
-  //   }
-  //   constexpr static FreeBlock* GetItem(Node* node) {
-  //     return twiddle::OwnerOf(node, &FreeBlock::free_list_node_);
-  //   }
-  // };
-
   class TreeComparator {
    public:
     bool operator()(const FreeBlock& lhs, const FreeBlock& rhs) const {
@@ -102,7 +90,6 @@ class FreeBlock {
   FreeBlock(size_t size, bool prev_block_is_free);
 
   BlockHeader header_;
-  // IntrusiveLinkedList<FreeBlock, List>::Node free_list_node_;
   RbNode free_tree_node_;
 };
 

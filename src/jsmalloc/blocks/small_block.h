@@ -19,7 +19,7 @@ class SmallBlock {
   /**
    * Returns a new SmallBlock that can lease out data_size byte chunks.
    */
-  static SmallBlock* Init(FreeBlock* block, size_t bin_size, size_t bin_count);
+  static SmallBlock* Init(void* block, size_t bin_size, size_t bin_count);
 
   /**
    * The block size required for the provided configuration.
@@ -61,8 +61,7 @@ class SmallBlock {
   };
 
  private:
-  SmallBlock(size_t block_size, bool prev_block_is_free, size_t bin_size,
-             size_t bin_count);
+  SmallBlock(size_t bin_size, size_t bin_count);
 
   using BitSet = BitSet1024;
 
@@ -82,7 +81,6 @@ class SmallBlock {
   size_t UsedBinBitSetSize() const;
   int FreeBinIndex() const;
 
-  BlockHeader header_;
   uint16_t bin_size_;
   uint16_t bin_count_;
   List::Node list_node_;
