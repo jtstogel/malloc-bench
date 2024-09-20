@@ -42,10 +42,12 @@ struct TraceResult {
 };
 
 bool ShouldIgnoreForScoring(const std::string& trace) {
-  return trace.ends_with("-short.trace") ||
-         absl::StrContains(trace, "simple") ||
+  return absl::StrContains(trace, "simple") ||
          absl::StrContains(trace, "test") ||
-         trace.ends_with("ngram-fox1.trace");
+         absl::StrContains(trace, "/bdd-") ||
+         absl::StrContains(trace, "/cbit-") ||
+         absl::StrContains(trace, "/syn-") ||
+         absl::StrContains(trace, "/ngram-");
 }
 
 absl::StatusOr<TraceResult> RunTrace(const std::string& tracefile,
@@ -243,6 +245,7 @@ int RunAllTraces() {
            "traces/syn-struct-short.trace",
            "traces/test.trace",
            "traces/test-zero.trace",
+           "traces/vim.trace",
        }) {
     if (absl::GetFlag(FLAGS_ignore_test) && ShouldIgnoreForScoring(tracefile)) {
       continue;
