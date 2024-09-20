@@ -21,7 +21,6 @@ inline void initialize_heap(HeapFactory& heap_factory) {
 }
 
 inline void* malloc(size_t size, size_t alignment = 0) {
-  std::lock_guard<std::mutex> lock(g_lock);
   return jsmalloc::malloc(size);
 }
 
