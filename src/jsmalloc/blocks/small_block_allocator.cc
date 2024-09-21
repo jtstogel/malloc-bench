@@ -59,8 +59,11 @@ SmallBlock* SmallBlockAllocator::NewSmallBlock(size_t data_size) {
 }
 
 void* SmallBlockAllocator::Allocate(size_t size) {
-  SmallBlock::List& allocable_block_list = GetSmallBlockList(size);
+  if (size == 0) {
+    return nullptr;
+  }
 
+  SmallBlock::List& allocable_block_list = GetSmallBlockList(size);
   SmallBlock* block = allocable_block_list.front();
 
   if (block != nullptr) {
@@ -96,14 +99,16 @@ void* SmallBlockAllocator::Realloc(void* ptr, size_t size) {
   if (size > kMaxDataSize) {
     return nullptr;
   }
-  if (block->DataSize() >= size) {
+  if (block->DataSize() >= size && size > 0) {
     return ptr;
   }
+
   void* new_ptr = Allocate(size);
-  if (new_ptr == nullptr) {
-    return nullptr;
+  if (new_ptr != nullptr && size > 0) {
+    memcpy(new_ptr, ptr, std::min(block->DataSize(), size));
   }
-  memcpy(new_ptr, ptr, std::min(block->DataSize(), size));
+
+  Free(ptr);
   return new_ptr;
 }
 
