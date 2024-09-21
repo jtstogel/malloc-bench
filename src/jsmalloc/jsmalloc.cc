@@ -106,15 +106,7 @@ void* calloc(size_t nmemb, size_t size) {
   return ptr;
 }
 
-void* realloc(void* ptr, size_t size) {
-  // Try optimistic reallocs.
-  if (heap_globals->small_block_heap_.Contains(ptr)) {
-    void* realloced = heap_globals->small_block_allocator_.Realloc(ptr, size);
-    if (realloced != nullptr) {
-      return realloced;
-    }
-  }
-
+void* default_realloc(void* ptr, size_t size) {
   void* new_ptr = malloc(size);
   if (new_ptr == nullptr) {
     return nullptr;
@@ -124,6 +116,17 @@ void* realloc(void* ptr, size_t size) {
   }
   free(ptr);
   return new_ptr;
+}
+
+void* realloc(void* ptr, size_t size) {
+  if (heap_globals->small_block_heap_.Contains(ptr)) {
+    void* new_ptr = heap_globals->small_block_allocator_.Realloc(ptr, size);
+    if (new_ptr != nullptr) {
+      return new_ptr;
+    }
+  }
+
+  return default_realloc(ptr, size);
 }
 
 void free(void* ptr) {
