@@ -107,6 +107,14 @@ void* calloc(size_t nmemb, size_t size) {
 }
 
 void* realloc(void* ptr, size_t size) {
+  // Try optimistic reallocs.
+  if (heap_globals->small_block_heap_.Contains(ptr)) {
+    void* realloced = heap_globals->small_block_allocator_.Realloc(ptr, size);
+    if (realloced != nullptr) {
+      return realloced;
+    }
+  }
+
   void* new_ptr = malloc(size);
   if (new_ptr == nullptr) {
     return nullptr;

@@ -43,9 +43,6 @@ class SmallBlock {
   /** Whether this block has free bins and can support an `Alloc()`. */
   bool IsFull() const;
 
-  /** This block's total size. */
-  size_t BlockSize() const;
-
   /** The size of data this block can allocate. */
   size_t DataSize() const;
 

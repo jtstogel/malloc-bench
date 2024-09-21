@@ -1,8 +1,9 @@
 #include "src/jsmalloc/blocks/small_block_allocator.h"
 
+#include <algorithm>
 #include <cstdint>
+#include <cstring>
 
-#include "src/jsmalloc/blocks/block.h"
 #include "src/jsmalloc/blocks/fixed_size_free_block_allocator.h"
 #include "src/jsmalloc/blocks/small_block.h"
 #include "src/jsmalloc/util/assert.h"
@@ -81,14 +82,37 @@ void* SmallBlockAllocator::Allocate(size_t size) {
   return ptr;
 }
 
+SmallBlock* SmallBlockAllocator::FindBlock(void* data_ptr) {
+  if (data_ptr == nullptr) {
+    return nullptr;
+  }
+  int32_t offset =
+      twiddle::PtrValue(data_ptr) % SmallBlockAllocator::kBlockSize;
+  return twiddle::AddPtrOffset<SmallBlock>(data_ptr, -offset);
+}
+
+void* SmallBlockAllocator::Realloc(void* ptr, size_t size) {
+  SmallBlock* block = FindBlock(ptr);
+  if (size > kMaxDataSize) {
+    return nullptr;
+  }
+  if (block->DataSize() >= size) {
+    return ptr;
+  }
+  void* new_ptr = Allocate(size);
+  if (new_ptr == nullptr) {
+    return nullptr;
+  }
+  memcpy(new_ptr, ptr, std::min(block->DataSize(), size));
+  return new_ptr;
+}
+
 void SmallBlockAllocator::Free(void* ptr) {
-  if (ptr == nullptr) {
+  auto* block = FindBlock(ptr);
+  if (block == nullptr) {
     return;
   }
 
-  int32_t offset = twiddle::PtrValue(ptr) % SmallBlockAllocator::kBlockSize;
-  auto* hdr = twiddle::AddPtrOffset<BlockHeader>(ptr, -offset);
-  auto* block = reinterpret_cast<SmallBlock*>(hdr);
   // If the block was full, then we would have removed it from its
   // freelist. Add it back now.
   if (block->IsFull()) {
@@ -104,7 +128,7 @@ void SmallBlockAllocator::Free(void* ptr) {
   // return it to the free block allocator.
   if (block->IsEmpty()) {
     SmallBlock::List::unlink(*block);
-    allocator_.Free(hdr);
+    allocator_.Free(block);
   }
 }
 
