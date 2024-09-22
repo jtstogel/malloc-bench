@@ -63,7 +63,7 @@ class PrimitiveBitSet : public DefaultAllocable<PrimitiveBitSet<T>, size_t> {
     return std::countr_one(bits_);
   }
 
-  size_t FindFirstUnsetBitFrom(size_t pos) {
+  size_t FindFirstUnsetBitFrom(size_t pos) const {
     return std::countr_one(bits_ | ~((-kOne) << pos));
   }
 
@@ -137,7 +137,7 @@ class MultiLevelBitSet {
 
       SecondLevel* lvl = GetSecondLevel(i);
       lvl->SetRange(lvl_start, lvl_end);
-      first_level_.set(i, lvl->FindFirstUnsetBit() == SecondLevel::kMaxBits);
+      first_level_.Set(i, lvl->FindFirstUnsetBit() == SecondLevel::kMaxBits);
     }
   }
 
@@ -169,8 +169,24 @@ class MultiLevelBitSet {
     // We could alternatively return early here, but this way is *branchless*.
     size_t idx = first_level_ones == FirstLevel::kMaxBits ? first_level_ones - 1
                                                           : first_level_ones;
-    size_t unfull_block_count = GetSecondLevel(idx)->FindFirstUnsetBit();
-    return idx * SecondLevel::kMaxBits + unfull_block_count;
+    return idx * SecondLevel::kMaxBits +
+           GetSecondLevel(idx)->FindFirstUnsetBit();
+  }
+
+  size_t FindFirstUnsetBitFrom(size_t pos) const {
+    size_t start_idx = pos / SecondLevel::kMaxBits;
+    size_t start_pos = pos % SecondLevel::kMaxBits;
+    size_t start_block_unset_bit =
+        GetSecondLevel(start_idx)->FindFirstUnsetBitFrom(start_pos);
+    if (start_block_unset_bit < SecondLevel::kMaxBits) {
+      return start_idx * SecondLevel::kMaxBits + start_block_unset_bit;
+    }
+
+    size_t first_level_ones = first_level_.FindFirstUnsetBitFrom(start_idx + 1);
+    size_t idx = first_level_ones == FirstLevel::kMaxBits ? first_level_ones - 1
+                                                          : first_level_ones;
+    return idx * SecondLevel::kMaxBits +
+           GetSecondLevel(idx)->FindFirstUnsetBit();
   }
 
  private:
@@ -273,15 +289,15 @@ class BitSet {
   }
 
   void Set(size_t pos, bool value = true) {
-    return reinterpret_cast<T*>(data_)->set(pos, value);
+    return reinterpret_cast<T*>(data_)->Set(pos, value);
   }
 
   bool Test(size_t pos) const {
-    return reinterpret_cast<const T*>(data_)->test(pos);
+    return reinterpret_cast<const T*>(data_)->Test(pos);
   }
 
   size_t FindFirstUnsetBit() const {
-    return reinterpret_cast<const T*>(data_)->find_unsetr();
+    return reinterpret_cast<const T*>(data_)->FindFirstUnsetBit();
   }
 
  private:
