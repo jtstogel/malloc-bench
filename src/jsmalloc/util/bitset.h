@@ -174,19 +174,27 @@ class MultiLevelBitSet {
   }
 
   size_t FindFirstUnsetBitFrom(size_t pos) const {
-    size_t start_idx = pos / SecondLevel::kMaxBits;
-    size_t start_pos = pos % SecondLevel::kMaxBits;
-    size_t start_block_unset_bit =
-        GetSecondLevel(start_idx)->FindFirstUnsetBitFrom(start_pos);
-    if (start_block_unset_bit < SecondLevel::kMaxBits) {
-      return start_idx * SecondLevel::kMaxBits + start_block_unset_bit;
-    }
+    size_t start_block_idx = pos / SecondLevel::kMaxBits;
+    size_t pos_within_start_block = pos % SecondLevel::kMaxBits;
+    size_t start_block_first_unset_bit =
+        GetSecondLevel(start_block_idx)
+            ->FindFirstUnsetBitFrom(pos_within_start_block);
+    size_t first_unset_bit_from_start_block =
+        start_block_idx * SecondLevel::kMaxBits + start_block_first_unset_bit;
 
-    size_t first_level_ones = first_level_.FindFirstUnsetBitFrom(start_idx + 1);
-    size_t idx = first_level_ones == FirstLevel::kMaxBits ? first_level_ones - 1
-                                                          : first_level_ones;
-    return idx * SecondLevel::kMaxBits +
-           GetSecondLevel(idx)->FindFirstUnsetBit();
+    size_t first_level_ones =
+        first_level_.FindFirstUnsetBitFrom(start_block_idx + 1);
+    // Subtract one from the index to avoid going out of bounds.
+    size_t end_block_idx = first_level_ones == FirstLevel::kMaxBits
+                               ? first_level_ones - 1
+                               : first_level_ones;
+    size_t first_unset_bit_after_start_block =
+        end_block_idx * SecondLevel::kMaxBits +
+        GetSecondLevel(end_block_idx)->FindFirstUnsetBit();
+
+    return start_block_first_unset_bit < SecondLevel::kMaxBits
+               ? first_unset_bit_from_start_block
+               : first_unset_bit_after_start_block;
   }
 
  private:
