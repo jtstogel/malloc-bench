@@ -119,4 +119,14 @@ TEST(BitSet, StaticallyAllocated) {
   EXPECT_TRUE(b.Test(200));
 }
 
+TEST(BitSet262144Test, FindFirstUnsetBit) {
+  BitSet<260000> b;
+  b.SetRange(0, 200000);
+  EXPECT_EQ(b.FindFirstUnsetBit(), 200000);
+
+  b.Set(0, false);
+  EXPECT_EQ(b.FindFirstUnsetBit(), 0);
+  EXPECT_EQ(b.FindFirstUnsetBitFrom(1), 200000);
+}
+
 }  // namespace jsmalloc

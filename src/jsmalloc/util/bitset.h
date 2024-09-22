@@ -304,8 +304,16 @@ class BitSet {
     return reinterpret_cast<const T*>(data_)->Test(pos);
   }
 
+  void SetRange(size_t start, size_t end) {
+    return reinterpret_cast<T*>(data_)->SetRange(start, end);
+  }
+
   size_t FindFirstUnsetBit() const {
     return reinterpret_cast<const T*>(data_)->FindFirstUnsetBit();
+  }
+
+  size_t FindFirstUnsetBitFrom(size_t pos) const {
+    return reinterpret_cast<const T*>(data_)->FindFirstUnsetBitFrom(pos);
   }
 
  private:
