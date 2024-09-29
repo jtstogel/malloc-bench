@@ -6,18 +6,9 @@
 #include "src/jsmalloc/blocks/free_block.h"
 #include "src/jsmalloc/util/assert.h"
 #include "src/jsmalloc/util/math.h"
-#include "src/jsmalloc/util/twiddle.h"
 
 namespace jsmalloc {
 namespace blocks {
-
-class LargeBlockHelper {
-  static_assert(offsetof(LargeBlock, data_) % 16 == 0);
-
-  static size_t LargeBlockSizeForDataSize(size_t data_size) {
-    return offsetof(LargeBlock, data_) + math::round_16b(data_size);
-  }
-};
 
 LargeBlock::LargeBlock(size_t block_size, bool prev_block_is_free)
     : header_(block_size, BlockKind::kLarge, prev_block_is_free) {}

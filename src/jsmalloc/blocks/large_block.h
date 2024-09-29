@@ -8,11 +8,7 @@
 namespace jsmalloc {
 namespace blocks {
 
-class LargeBlockHelper;
-
 class LargeBlock {
-  friend LargeBlockHelper;
-
  public:
   static size_t BlockSize(size_t data_size);
   static LargeBlock* Init(FreeBlock* block);
