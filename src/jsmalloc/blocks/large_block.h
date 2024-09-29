@@ -11,7 +11,8 @@ namespace blocks {
 class LargeBlock {
  public:
   static size_t BlockSize(size_t data_size);
-  static LargeBlock* Init(FreeBlock* block);
+
+  static LargeBlock* Init(FreeBlock* block, size_t alignment = 1);
 
   /** Returns this block's size. */
   size_t BlockSize() const;
@@ -22,10 +23,7 @@ class LargeBlock {
   /** Pointer to the data stored by this block. */
   void* Data();
 
-  static constexpr LargeBlock* FromDataPtr(void* data) {
-    return twiddle::AddPtrOffset<LargeBlock>(
-        data, -static_cast<int32_t>(offsetof(LargeBlock, data_)));
-  }
+  static LargeBlock* FromDataPtr(void* ptr);
 
   BlockHeader* Header() { 
     return &header_;
@@ -35,6 +33,7 @@ class LargeBlock {
   explicit LargeBlock(size_t block_size, bool prev_block_is_free);
 
   BlockHeader header_;
+  int32_t data_offset_;
   alignas(16) uint8_t data_[];
 };
 
