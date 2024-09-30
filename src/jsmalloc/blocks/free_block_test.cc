@@ -1,6 +1,7 @@
 #include "src/jsmalloc/blocks/free_block.h"
 
 #include "gtest/gtest.h"
+#include "src/jsmalloc/allocator.h"
 
 namespace jsmalloc {
 namespace blocks {
@@ -11,8 +12,8 @@ class FreeBlockTest : public ::testing::Test {
     sentinel_heap.Init();
   }
 
-  jsmalloc::testing::TestHeap heap;
-  SentinelBlockHeap sentinel_heap = SentinelBlockHeap(heap);
+  jsmalloc::testing::TestRegionAllocator allocator;
+  SentinelBlockHeap sentinel_heap = SentinelBlockHeap(&allocator, &allocator);
 };
 
 TEST_F(FreeBlockTest, AllowsNopResize) {

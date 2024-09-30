@@ -3,6 +3,7 @@ cc_library(
     hdrs = ["allocator.h"],
     visibility = ["//visibility:public"],
     deps = [
+        "@cc-util//util:absl_util",
         "//src:heap_factory",
         "//src:heap_interface",
         "//src/jsmalloc/util:assert",

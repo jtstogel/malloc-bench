@@ -103,7 +103,7 @@ void* (*__MALLOC_HOOK_VOLATILE __memalign_hook)(size_t, size_t, const void*) =
 void* operator new(size_t size) noexcept(false) {
   void* res = bench::malloc(size);
   if (res == nullptr) {
-    throw std::bad_alloc();
+    // throw std::bad_alloc();
   }
   return res;
 }
@@ -116,7 +116,7 @@ void operator delete(void* p, size_t size) noexcept {
 void* operator new[](size_t size) noexcept(false) {
   void* res = bench::malloc(size);
   if (res == nullptr) {
-    throw std::bad_alloc();
+    // throw std::bad_alloc();
   }
   return res;
 }
@@ -142,7 +142,7 @@ void operator delete[](void* p, const std::nothrow_t&) noexcept {
 void* operator new(size_t size, std::align_val_t alignment) noexcept(false) {
   void* res = bench::malloc(static_cast<size_t>(alignment), size);
   if (res == nullptr) {
-    throw std::bad_alloc();
+    // throw std::bad_alloc();
   }
   return res;
 }
@@ -164,7 +164,7 @@ void operator delete(void* p, size_t size,
 void* operator new[](size_t size, std::align_val_t alignment) noexcept(false) {
   void* res = bench::malloc(static_cast<size_t>(alignment), size);
   if (res == nullptr) {
-    throw std::bad_alloc();
+    // throw std::bad_alloc();
   }
   return res;
 }

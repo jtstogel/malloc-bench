@@ -22,9 +22,8 @@ constexpr size_t kHeapSize = 512 << 20;
 
 class FreeBlockHeap {
  public:
-  explicit FreeBlockHeap(bench::Heap& heap)
-      : heap_adaptor_(&heap),
-        sentinel_block_heap_(heap_adaptor_),
+  explicit FreeBlockHeap(MemRegionAllocator* allocator, MemRegion* region)
+      : sentinel_block_heap_(region, allocator),
         free_block_allocator_(sentinel_block_heap_) {}
 
   blocks::FreeBlockAllocator& FreeBlockAllocator() {
@@ -36,56 +35,54 @@ class FreeBlockHeap {
   }
 
  private:
-  HeapAdaptor heap_adaptor_;
   blocks::SentinelBlockHeap sentinel_block_heap_;
   blocks::FreeBlockAllocator free_block_allocator_;
 };
 
 class HeapGlobals {
  public:
-  explicit HeapGlobals(bench::HeapFactory& heap_factory,
-                       bench::Heap& small_block_heap,
-                       bench::Heap& large_block_heap)
-      : heap_factory_(heap_factory),
-        large_block_heap_(large_block_heap),
+  explicit HeapGlobals(MemRegionAllocator* allocator,
+                       MemRegion* small_block_heap, MemRegion* large_block_heap)
+      : large_block_heap_(allocator, large_block_heap),
         large_block_allocator_(large_block_heap_.FreeBlockAllocator()),
-        small_block_heap_(&small_block_heap),
-        small_block_allocator_(small_block_heap_) {}
+        small_block_region_(small_block_heap),
+        small_block_allocator_(allocator, small_block_heap) {}
 
   void Init() {
     large_block_heap_.Init();
   }
 
-  bench::HeapFactory& heap_factory_;
   FreeBlockHeap large_block_heap_;
   blocks::LargeBlockAllocator large_block_allocator_;
-  HeapAdaptor small_block_heap_;
+  MemRegion* small_block_region_;
   blocks::SmallBlockAllocator small_block_allocator_;
 };
 
+MemRegion g_small_block_heap(nullptr);
+MemRegion g_large_block_heap(nullptr);
 uint8_t globals_data[sizeof(HeapGlobals)];
 HeapGlobals* heap_globals = reinterpret_cast<HeapGlobals*>(&globals_data);
 
 }  // namespace
 
 // Called before any allocations are made.
-void initialize_heap(bench::HeapFactory& heap_factory) {
-  HeapFactoryAdaptor mem_allocator(&heap_factory);
-
-  auto large_block_heap = heap_factory.NewInstance(kHeapSize);
+void initialize_heap(MemRegionAllocator& allocator) {
+  absl::StatusOr<MemRegion> large_block_heap = allocator.New(kHeapSize);
   if (!large_block_heap.ok()) {
     std::cerr << "Failed to initialize large block heap" << std::endl;
     std::exit(-1);
   }
+  new (&large_block_heap) MemRegion(large_block_heap->Start());
 
-  auto small_block_heap = heap_factory.NewInstance(kHeapSize);
+  absl::StatusOr<MemRegion> small_block_heap = allocator.New(kHeapSize);
   if (!small_block_heap.ok()) {
     std::cerr << "Failed to initialize small block heap" << std::endl;
     std::exit(-1);
   }
+  new (&g_small_block_heap) MemRegion(small_block_heap->Start());
 
   heap_globals = new (globals_data)
-      HeapGlobals(heap_factory, **small_block_heap, **large_block_heap);
+      HeapGlobals(&allocator, &g_small_block_heap, &g_small_block_heap);
   heap_globals->Init();
 }
 
@@ -96,7 +93,6 @@ void* malloc(size_t size, size_t alignment) {
 
   alignment = alignment == 0 ? 1 : alignment;
   DCHECK_EQ(std::popcount(alignment), 1);
-
 
   size_t required_size = size + alignment - 1;
   if (required_size <= blocks::SmallBlockAllocator::kMaxDataSize) {
@@ -129,7 +125,7 @@ void* default_realloc(void* ptr, size_t size) {
 }
 
 void* realloc(void* ptr, size_t size) {
-  if (heap_globals->small_block_heap_.Contains(ptr)) {
+  if (heap_globals->small_block_region_->Contains(ptr)) {
     void* new_ptr = heap_globals->small_block_allocator_.Realloc(ptr, size);
     if (new_ptr != nullptr) {
       return new_ptr;
@@ -144,7 +140,7 @@ void free(void* ptr, size_t size, size_t alignment) {
     return;
   }
 
-  if (heap_globals->small_block_heap_.Contains(ptr)) {
+  if (heap_globals->small_block_region_->Contains(ptr)) {
     heap_globals->small_block_allocator_.Free(ptr);
     return;
   }

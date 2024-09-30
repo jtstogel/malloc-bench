@@ -60,6 +60,7 @@ cc_library(
         ":heap_interface",
         ":mmap_heap",
         "//src/jsmalloc",
+        "//src/jsmalloc:allocator",
     ],
 )
 
@@ -119,7 +120,6 @@ cc_library(
 cc_library(
     name = "libc_override",
     srcs = ["libc_override.cc"],
-    copts = ["-fexceptions"],
     deps = [
         ":allocator_interface",
     ],
@@ -130,6 +130,9 @@ cc_shared_library(
     shared_lib_name = "liballoc.so",
     deps = [
         ":libc_override",
+    ],
+    user_link_flags = [
+        "-Wl",
     ],
 )
 
