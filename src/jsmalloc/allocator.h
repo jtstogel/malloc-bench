@@ -53,7 +53,7 @@ class MemRegionAllocator {
 
   /** Extends the memory region. */
   virtual void* Extend(MemRegion* region, intptr_t increment) = 0;
-4
+
   /** Releases the region back to main memory. */
   virtual absl::Status Delete(MemRegion* region) = 0;
 };
