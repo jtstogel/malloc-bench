@@ -17,10 +17,10 @@ class FreeBlockTest : public ::testing::Test {
 };
 
 TEST_F(FreeBlockTest, AllowsNopResize) {
-  FreeBlock* block = FreeBlock::New(sentinel_heap, 48);
-  EXPECT_TRUE(block->CanMarkUsed(48));
+  FreeBlock* block = FreeBlock::New(sentinel_heap, 64);
+  EXPECT_TRUE(block->CanMarkUsed(64));
 
-  FreeBlock* remainder = block->MarkUsed(48);
+  FreeBlock* remainder = block->MarkUsed(64);
   EXPECT_EQ(remainder, nullptr);
 }
 

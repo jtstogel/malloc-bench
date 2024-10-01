@@ -12,6 +12,13 @@ cc_library(
 )
 
 cc_library(
+    name = "file_logger",
+    hdrs = ["file_logger.h"],
+    srcs = ["file_logger.cc"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
     name = "assert",
     hdrs = ["assert.h"],
     visibility = ["//visibility:public"],

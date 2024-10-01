@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdlib>
 #include <map>
 #include <sys/mman.h>
 
@@ -27,8 +28,10 @@ class MemRegion {
  public:
   MemRegion() : MemRegion(nullptr, 0) {}
 
-  MemRegion(MemRegion&& region) : MemRegion(region.Start(), region.MaxSize()) {
-    SetEnd(region.End());
+  MemRegion(MemRegion&& region)
+      : start_(region.start_), end_(region.end_), max_size_(region.max_size_) {
+    region.end_ = nullptr;
+    region.start_ = nullptr;
   }
 
   void* Start() const {
@@ -58,7 +61,7 @@ class MemRegion {
 
   void* start_;
   void* end_;
-  size_t max_size_;
+  const size_t max_size_;
 };
 
 class MemRegionAllocator {
@@ -73,25 +76,22 @@ class MemRegionAllocator {
   virtual absl::Status Delete(MemRegion* region) = 0;
 };
 
+/** A MemRegionAllocator that allocates from mmap. */
 class MMapMemRegionAllocator : public MemRegionAllocator {
  public:
-  /** Returns a pointer to a new memory region. */
   absl::StatusOr<MemRegion> New(size_t max_size) override {
     void* heap_start = mmap(nullptr, max_size, PROT_READ | PROT_WRITE,
                             MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
     if (heap_start == MAP_FAILED) {
-      // std::cerr << "Failed to unmap heap: " << strerror(errno) << std::endl;
       return absl::InternalError(absl::StrFormat(
           "Failed to mmap size %zu region: %s", max_size, strerror(errno)));
     }
     return MemRegion(heap_start, max_size);
   }
 
-  /** Extends the memory region. */
   void* Extend(MemRegion* region, intptr_t increment) override {
-    if ((static_cast<uint8_t*>(region->End()) -
-         static_cast<uint8_t*>(region->Start())) +
-            increment >
+    if (increment + twiddle::PtrValue(region->End()) -
+            twiddle::PtrValue(region->Start()) >
         region->MaxSize()) {
       return nullptr;
     }
@@ -100,7 +100,6 @@ class MMapMemRegionAllocator : public MemRegionAllocator {
     return previous_end;
   }
 
-  /** Releases the region back to main memory. */
   absl::Status Delete(MemRegion* region) override {
     if (region->Start() != nullptr) {
       int result = munmap(region->Start(), region->MaxSize());

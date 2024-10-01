@@ -3,9 +3,8 @@
 #include <bit>
 #include <cassert>
 #include <cstddef>
+#include <cstdio>
 
-#include "src/heap_factory.h"
-#include "src/heap_interface.h"
 #include "src/jsmalloc/allocator.h"
 #include "src/jsmalloc/blocks/free_block_allocator.h"
 #include "src/jsmalloc/blocks/large_block_allocator.h"
@@ -58,9 +57,13 @@ class HeapGlobals {
   blocks::SmallBlockAllocator small_block_allocator_;
 };
 
-MemRegion g_small_block_heap;
-MemRegion g_large_block_heap;
+uint8_t g_small_block_heap_data[sizeof(MemRegion)];
+uint8_t g_large_block_heap_data[sizeof(MemRegion)];
 uint8_t globals_data[sizeof(HeapGlobals)];
+MemRegion* g_small_block_heap =
+    reinterpret_cast<MemRegion*>(g_small_block_heap_data);
+MemRegion* g_large_block_heap =
+    reinterpret_cast<MemRegion*>(g_large_block_heap_data);
 HeapGlobals* heap_globals = reinterpret_cast<HeapGlobals*>(&globals_data);
 
 }  // namespace
@@ -72,17 +75,17 @@ void initialize_heap(MemRegionAllocator& allocator) {
     std::cerr << "Failed to initialize large block heap" << std::endl;
     std::exit(-1);
   }
-  new (&large_block_heap) MemRegion(std::move(*large_block_heap));
+  new (&g_large_block_heap_data) MemRegion(std::move(*large_block_heap));
 
   absl::StatusOr<MemRegion> small_block_heap = allocator.New(kHeapSize);
   if (!small_block_heap.ok()) {
     std::cerr << "Failed to initialize small block heap" << std::endl;
     std::exit(-1);
   }
-  new (&g_small_block_heap) MemRegion(std::move(*small_block_heap));
+  new (&g_small_block_heap_data) MemRegion(std::move(*small_block_heap));
 
   heap_globals = new (globals_data)
-      HeapGlobals(&allocator, &g_small_block_heap, &g_small_block_heap);
+      HeapGlobals(&allocator, g_small_block_heap, g_large_block_heap);
   heap_globals->Init();
 }
 
@@ -135,7 +138,7 @@ void* realloc(void* ptr, size_t size) {
   return default_realloc(ptr, size);
 }
 
-void free(void* ptr, size_t size, size_t alignment) {
+void free(void* ptr, size_t, size_t) {
   if (ptr == nullptr) {
     return;
   }
@@ -147,7 +150,7 @@ void free(void* ptr, size_t size, size_t alignment) {
   heap_globals->large_block_allocator_.Free(ptr);
 }
 
-size_t get_size(void* ptr) {
+size_t get_size(void*) {
   return 0;
 }
 
