@@ -57,14 +57,9 @@ class HeapGlobals {
   blocks::SmallBlockAllocator small_block_allocator_;
 };
 
-uint8_t g_small_block_heap_data[sizeof(MemRegion)];
-uint8_t g_large_block_heap_data[sizeof(MemRegion)];
-uint8_t globals_data[sizeof(HeapGlobals)];
-MemRegion* g_small_block_heap =
-    reinterpret_cast<MemRegion*>(g_small_block_heap_data);
-MemRegion* g_large_block_heap =
-    reinterpret_cast<MemRegion*>(g_large_block_heap_data);
-HeapGlobals* heap_globals = reinterpret_cast<HeapGlobals*>(&globals_data);
+std::optional<HeapGlobals> heap_globals;
+std::optional<MemRegion> g_small_block_heap;
+std::optional<MemRegion> g_large_block_heap;
 
 }  // namespace
 
@@ -75,17 +70,16 @@ void initialize_heap(MemRegionAllocator& allocator) {
     std::cerr << "Failed to initialize large block heap" << std::endl;
     std::exit(-1);
   }
-  new (&g_large_block_heap_data) MemRegion(std::move(*large_block_heap));
+  g_large_block_heap.emplace(std::move(*large_block_heap));
 
   absl::StatusOr<MemRegion> small_block_heap = allocator.New(kHeapSize);
   if (!small_block_heap.ok()) {
     std::cerr << "Failed to initialize small block heap" << std::endl;
     std::exit(-1);
   }
-  new (&g_small_block_heap_data) MemRegion(std::move(*small_block_heap));
+  small_block_heap.emplace(std::move(*small_block_heap));
 
-  heap_globals = new (globals_data)
-      HeapGlobals(&allocator, g_small_block_heap, g_large_block_heap);
+  heap_globals.emplace(&allocator, &*g_small_block_heap, &*g_large_block_heap);
   heap_globals->Init();
 }
 

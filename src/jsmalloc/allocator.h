@@ -34,6 +34,13 @@ class MemRegion {
     region.start_ = nullptr;
   }
 
+  MemRegion& operator=(MemRegion&& region) {
+    this->start_ = region.start_;
+    this->end_ = region.end_;
+    this->max_size_ = region.max_size_;
+    return *this;
+  }
+
   void* Start() const {
     return start_;
   }
@@ -61,7 +68,7 @@ class MemRegion {
 
   void* start_;
   void* end_;
-  const size_t max_size_;
+  size_t max_size_;
 };
 
 class MemRegionAllocator {
