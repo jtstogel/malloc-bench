@@ -2,7 +2,10 @@
 
 #include <cstdint>
 #include <map>
+#include <sys/mman.h>
 
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 #include "util/absl_util.h"
 
 #include "src/heap_factory.h"
@@ -13,16 +16,20 @@
 namespace jsmalloc {
 
 class MemRegionAllocator;
+class MMapMemRegionAllocator;
 class HeapFactoryAdaptor;
 
 class MemRegion {
   friend MemRegionAllocator;
+  friend MMapMemRegionAllocator;
   friend HeapFactoryAdaptor;
 
  public:
-  MemRegion() : MemRegion(nullptr) {}
+  MemRegion() : MemRegion(nullptr, 0) {}
 
-  explicit MemRegion(void* start) : start_(start), end_(start) {}
+  MemRegion(MemRegion&& region) : MemRegion(region.Start(), region.MaxSize()) {
+    SetEnd(region.End());
+  }
 
   void* Start() const {
     return start_;
@@ -32,18 +39,26 @@ class MemRegion {
     return end_;
   }
 
+  size_t MaxSize() const {
+    return max_size_;
+  }
+
   bool Contains(void* ptr) const {
     uint64_t val = twiddle::PtrValue(ptr);
     return twiddle::PtrValue(Start()) <= val && val < twiddle::PtrValue(End());
   }
 
  private:
+  explicit MemRegion(void* start, size_t max_size)
+      : start_(start), end_(start), max_size_(max_size) {}
+
   void SetEnd(void* end) {
     end_ = end;
   }
 
   void* start_;
   void* end_;
+  size_t max_size_;
 };
 
 class MemRegionAllocator {
@@ -56,6 +71,47 @@ class MemRegionAllocator {
 
   /** Releases the region back to main memory. */
   virtual absl::Status Delete(MemRegion* region) = 0;
+};
+
+class MMapMemRegionAllocator : public MemRegionAllocator {
+ public:
+  /** Returns a pointer to a new memory region. */
+  absl::StatusOr<MemRegion> New(size_t max_size) override {
+    void* heap_start = mmap(nullptr, max_size, PROT_READ | PROT_WRITE,
+                            MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
+    if (heap_start == MAP_FAILED) {
+      // std::cerr << "Failed to unmap heap: " << strerror(errno) << std::endl;
+      return absl::InternalError(absl::StrFormat(
+          "Failed to mmap size %zu region: %s", max_size, strerror(errno)));
+    }
+    return MemRegion(heap_start, max_size);
+  }
+
+  /** Extends the memory region. */
+  void* Extend(MemRegion* region, intptr_t increment) override {
+    if ((static_cast<uint8_t*>(region->End()) -
+         static_cast<uint8_t*>(region->Start())) +
+            increment >
+        region->MaxSize()) {
+      return nullptr;
+    }
+    void* previous_end = region->End();
+    region->SetEnd(twiddle::AddPtrOffset<void>(region->End(), increment));
+    return previous_end;
+  }
+
+  /** Releases the region back to main memory. */
+  absl::Status Delete(MemRegion* region) override {
+    if (region->Start() != nullptr) {
+      int result = munmap(region->Start(), region->MaxSize());
+      if (result == -1) {
+        std::cerr << "Failed to unmap heap: " << strerror(errno) << std::endl;
+        return absl::InternalError(
+            absl::StrCat("Failed to unmap heap: ", strerror(errno)));
+      }
+    }
+    return absl::OkStatus();
+  }
 };
 
 /** A MemRegionAllocator that interfaces with a HeapFactory. */
@@ -71,7 +127,7 @@ class HeapFactoryAdaptor : public MemRegionAllocator {
     }
     bench::Heap* heap = *s;
     heaps_by_start_.emplace(heap->Start(), heap);
-    return MemRegion(heap->Start());
+    return MemRegion(heap->Start(), size);
   }
 
   absl::Status Delete(MemRegion* region) override {

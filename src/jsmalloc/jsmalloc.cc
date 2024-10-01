@@ -58,8 +58,8 @@ class HeapGlobals {
   blocks::SmallBlockAllocator small_block_allocator_;
 };
 
-MemRegion g_small_block_heap(nullptr);
-MemRegion g_large_block_heap(nullptr);
+MemRegion g_small_block_heap;
+MemRegion g_large_block_heap;
 uint8_t globals_data[sizeof(HeapGlobals)];
 HeapGlobals* heap_globals = reinterpret_cast<HeapGlobals*>(&globals_data);
 
@@ -72,14 +72,14 @@ void initialize_heap(MemRegionAllocator& allocator) {
     std::cerr << "Failed to initialize large block heap" << std::endl;
     std::exit(-1);
   }
-  new (&large_block_heap) MemRegion(large_block_heap->Start());
+  new (&large_block_heap) MemRegion(std::move(*large_block_heap));
 
   absl::StatusOr<MemRegion> small_block_heap = allocator.New(kHeapSize);
   if (!small_block_heap.ok()) {
     std::cerr << "Failed to initialize small block heap" << std::endl;
     std::exit(-1);
   }
-  new (&g_small_block_heap) MemRegion(small_block_heap->Start());
+  new (&g_small_block_heap) MemRegion(std::move(*small_block_heap));
 
   heap_globals = new (globals_data)
       HeapGlobals(&allocator, &g_small_block_heap, &g_small_block_heap);
@@ -145,6 +145,10 @@ void free(void* ptr, size_t size, size_t alignment) {
     return;
   }
   heap_globals->large_block_allocator_.Free(ptr);
+}
+
+size_t get_size(void* ptr) {
+  return 0;
 }
 
 }  // namespace jsmalloc

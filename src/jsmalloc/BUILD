@@ -4,6 +4,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@cc-util//util:absl_util",
+        "@abseil-cpp//absl/strings:str_format",
         "//src:heap_factory",
         "//src:heap_interface",
         "//src/jsmalloc/util:assert",
