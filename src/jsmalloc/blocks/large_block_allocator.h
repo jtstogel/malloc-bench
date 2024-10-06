@@ -20,6 +20,9 @@ class LargeBlockAllocator {
   /** Frees a chunk of user data from its `LargeBlock`. */
   void Free(void* ptr);
 
+  /** Returns the size of the available memory at `ptr`. */
+  size_t Size(void* ptr);
+
  private:
   FreeBlockAllocator& allocator_;
 };

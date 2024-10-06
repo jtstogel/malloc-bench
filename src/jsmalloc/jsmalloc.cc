@@ -1,5 +1,6 @@
 #include "src/jsmalloc/jsmalloc.h"
 
+#include <algorithm>
 #include <bit>
 #include <cassert>
 #include <cstddef>
@@ -118,7 +119,8 @@ void* default_realloc(void* ptr, size_t size) {
     return nullptr;
   }
   if (ptr != nullptr) {
-    memcpy(new_ptr, ptr, size);
+    size_t original_size = get_size(ptr);
+    memcpy(new_ptr, ptr, std::min(size, original_size));
   }
   free(ptr);
   return new_ptr;
@@ -158,8 +160,21 @@ void free(void* ptr, size_t, size_t) {
   heap_globals->large_block_allocator_.Free(ptr);
 }
 
-size_t get_size(void*) {
-  return 0;
+size_t get_size(void* ptr) {
+  if (ptr == nullptr) {
+    return 0;
+  }
+
+  DLOG_IF(ERROR,
+          !heap_globals->large_block_region_->Contains(ptr) &&
+              !heap_globals->small_block_region_->Contains(ptr),
+          "get_size(%p) called with unmapped ptr\n", ptr);
+
+  if (heap_globals->small_block_region_->Contains(ptr)) {
+    return heap_globals->small_block_allocator_.Size(ptr);
+  }
+
+  return heap_globals->large_block_allocator_.Size(ptr);
 }
 
 }  // namespace jsmalloc

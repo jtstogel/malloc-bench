@@ -37,5 +37,11 @@ void LargeBlockAllocator::Free(void* ptr) {
   allocator_.Free(LargeBlock::FromDataPtr(ptr)->Header());
 }
 
+/** Returns the size of the available memory at `ptr`. */
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+size_t LargeBlockAllocator::Size(void* ptr) {
+  return LargeBlock::FromDataPtr(ptr)->DataSize();
+}
+
 }  // namespace blocks
 }  // namespace jsmalloc

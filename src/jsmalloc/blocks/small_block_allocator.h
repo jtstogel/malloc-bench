@@ -41,6 +41,9 @@ class SmallBlockAllocator {
   /** Reallocates a chunk of user data from a SmallBlock. */
   void* Realloc(void* ptr, size_t size);
 
+  /** Returns the size of the available memory at `ptr`. */
+  size_t Size(void* ptr);
+
   /** The max allocable data size for each size class. */
   static constexpr uint32_t kMaxDataSizePerSizeClass[] = {
     8, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256,

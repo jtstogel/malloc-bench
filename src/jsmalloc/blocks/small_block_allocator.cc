@@ -137,5 +137,15 @@ void SmallBlockAllocator::Free(void* ptr) {
   }
 }
 
+/** Returns the size of the available memory at `ptr`. */
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+size_t SmallBlockAllocator::Size(void* ptr) {
+  auto* block = FindBlock(ptr);
+  if (block == nullptr) {
+    return 0;
+  }
+  return block->DataSize();
+}
+
 }  // namespace blocks
 }  // namespace jsmalloc
