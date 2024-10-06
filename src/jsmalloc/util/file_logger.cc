@@ -38,13 +38,13 @@ void FileLogger::Log(Level level, const char* fmt, ...) const {
 
   std::thread::id tid = std::this_thread::get_id();
 
-  // It's kind of annoying to get the actual real thread id,
-  // so just get a consistent, probably unique value.
+  // It's kind of annoying to get the actual thread ID or stack start,
+  // so we just pick a consistent, probably unique value.
   size_t tid_value = std::hash<std::thread::id>{}(tid) & ((1 << 30) - 1);
-  int pos = std::sprintf(buf, "%s - tid:%zx - ", LevelString(level), tid_value);
+  int pos = std::sprintf(buf, "%s - tid:%zX - ", LevelString(level), tid_value);
 
   va_start(args, fmt);
-  std::vsprintf(&buf[pos], fmt, args);
+  pos += std::vsprintf(&buf[pos], fmt, args);
   va_end(args);
 
   write(fd_, buf, strlen(buf));
