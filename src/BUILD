@@ -54,7 +54,7 @@ cc_library(
 cc_library(
     name = "allocator_interface",
     hdrs = ["allocator_interface.h"],
-    srcc = ["allocator_interface.cc"],
+    srcs = ["allocator_interface.cc"],
     deps = [
         ":heap_factory",
         ":heap_interface",
