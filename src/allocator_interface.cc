@@ -66,7 +66,7 @@ void* realloc(void* ptr, size_t size) {
 
   void* new_ptr = jsmalloc::realloc(ptr, size);
   DLOG(DEBUG, "realloc(%p, %zu) = %p\n", ptr, size, new_ptr);
-  if (ptr == nullptr) {
+  if (new_ptr == nullptr) {
     DLOG(ERROR, "ERROR: realloc(%p, %zu) = nullptr\n", ptr, size);
   }
   return new_ptr;
