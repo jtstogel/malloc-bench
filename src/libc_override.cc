@@ -140,7 +140,7 @@ void operator delete[](void* p, const std::nothrow_t&) noexcept {
 }
 
 void* operator new(size_t size, std::align_val_t alignment) noexcept(false) {
-  void* res = bench::malloc(static_cast<size_t>(alignment), size);
+  void* res = bench::malloc(size, static_cast<size_t>(alignment));
   if (res == nullptr) {
     throw std::bad_alloc();
   }
