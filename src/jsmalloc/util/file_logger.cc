@@ -2,7 +2,6 @@
 
 #include <cstdarg>
 #include <cstdio>
-#include <ostream>
 
 namespace jsmalloc {
 
@@ -15,7 +14,7 @@ void FileLogger::Open(char const* file) {
              S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 }
 
-void FileLogger::Log(const char* fmt, ...) const {
+void FileLogger::Log(Level level, const char* fmt, ...) const {
   va_list args;
   va_start(args, fmt);
   char buf[256];
@@ -23,7 +22,10 @@ void FileLogger::Log(const char* fmt, ...) const {
   va_end(args);
 
   write(fd_, buf, strlen(buf));
-  fsync(fd_);
+
+  if (level == Level::kError) {
+    fsync(fd_);
+  }
 }
 
 void GLogger::Open() {

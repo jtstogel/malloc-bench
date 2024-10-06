@@ -40,7 +40,11 @@ void* malloc(size_t size, size_t alignment = 0) {
   initialize();
 
   void* ptr = jsmalloc::malloc(size, alignment);
-  DEBUG_LOG("malloc(%zu, alignment=%zu) = %p\n", size, alignment, ptr);
+  DLOG(DEBUG, "malloc(%zu, alignment=%zu) = %p\n", size, alignment, ptr);
+  if (ptr == nullptr) {
+    DLOG(ERROR, "ERROR: malloc(%zu, alignment=%zu) = nullptr\n", size,
+         alignment);
+  }
   return ptr;
 }
 
@@ -49,7 +53,10 @@ void* calloc(size_t nmemb, size_t size) {
   initialize();
 
   void* ptr = jsmalloc::calloc(nmemb, size);
-  DEBUG_LOG("calloc(%zu, %zu) = %p\n", nmemb, size, ptr);
+  DLOG(DEBUG, "calloc(%zu, %zu) = %p\n", nmemb, size, ptr);
+  if (ptr == nullptr) {
+    DLOG(ERROR, "ERROR: calloc(%zu, %zu) = nullptr\n", nmemb, size);
+  }
   return ptr;
 }
 
@@ -58,7 +65,10 @@ void* realloc(void* ptr, size_t size) {
   initialize();
 
   void* new_ptr = jsmalloc::realloc(ptr, size);
-  DEBUG_LOG("realloc(%p, %zu) = %p\n", ptr, size, new_ptr);
+  DLOG(DEBUG, "realloc(%p, %zu) = %p\n", ptr, size, new_ptr);
+  if (ptr == nullptr) {
+    DLOG(ERROR, "ERROR: realloc(%p, %zu) = nullptr\n", ptr, size);
+  }
   return new_ptr;
 }
 
@@ -66,7 +76,7 @@ void free(void* ptr, size_t size = 0, size_t alignment = 0) {
   std::lock_guard l(g_mutex);
   initialize();
 
-  DEBUG_LOG("free(%p)\n", ptr);
+  DLOG(DEBUG, "free(%p)\n", ptr);
   return jsmalloc::free(ptr, size, alignment);
 }
 

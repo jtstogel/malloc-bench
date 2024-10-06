@@ -132,10 +132,10 @@ void* realloc(void* ptr, size_t size) {
     }
   }
 
-  DEBUG_LOG_IF(ptr != nullptr &&
-                   !heap_globals->large_block_region_->Contains(ptr) &&
-                   !heap_globals->small_block_region_->Contains(ptr),
-               "ERROR: realloc(%p, %zu) called with unmapped ptr\n", ptr);
+  DLOG_IF(ERROR,
+          ptr != nullptr && !heap_globals->large_block_region_->Contains(ptr) &&
+              !heap_globals->small_block_region_->Contains(ptr),
+          "ERROR: realloc(%p, %zu) called with unmapped ptr\n", ptr, size);
 
   return default_realloc(ptr, size);
 }
@@ -150,9 +150,10 @@ void free(void* ptr, size_t, size_t) {
     return;
   }
 
-  DEBUG_LOG_IF(!heap_globals->large_block_region_->Contains(ptr) &&
-                   !heap_globals->small_block_region_->Contains(ptr),
-               "free(%p) called with unmapped ptr\n", ptr);
+  DLOG_IF(ERROR,
+          !heap_globals->large_block_region_->Contains(ptr) &&
+              !heap_globals->small_block_region_->Contains(ptr),
+          "ERROR: free(%p) called with unmapped ptr\n", ptr);
 
   heap_globals->large_block_allocator_.Free(ptr);
 }

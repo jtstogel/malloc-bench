@@ -13,11 +13,17 @@ namespace jsmalloc {
 
 class FileLogger {
  public:
+  enum class Level {
+    kDebug = 0,
+    kInfo = 1,
+    kError = 2,
+  };
+
   void Open(char const* file);
 
-  void Log(const char* fmt, ...) const;
+  void Log(Level level, const char* fmt, ...) const;
 
-  void LogVariadicArgs(const char* fmt, va_list args) const;
+  void Flush() const;
 
  private:
   int fd_ = 0;
@@ -37,14 +43,26 @@ class GLogger {
 
 #ifndef NDEBUG
 
-#define DEBUG_LOG_IF(cond, ...)                         \
-  do {                                                  \
-    if (cond) {                                         \
-      ::jsmalloc::GLogger::Instance().Log(__VA_ARGS__); \
-    }                                                   \
+#define DLOG_INTERNAL(log_level, log_predicate, flush, ...)  \
+  do {                                                       \
+    auto DEBUG = ::jsmalloc::FileLogger::Level::kDebug;      \
+    (void) DEBUG;                                            \
+    auto INFO = ::jsmalloc::FileLogger::Level::kInfo;        \
+    (void) INFO;                                             \
+    auto ERROR = ::jsmalloc::FileLogger::Level::kError;      \
+    (void) ERROR;                                            \
+                                                             \
+    ::jsmalloc::FileLogger::Level lvl = log_level;           \
+    if (log_predicate) {                                     \
+      ::jsmalloc::GLogger::Instance().Log(lvl, __VA_ARGS__); \
+    }                                                        \
+    if (flush) {                                             \
+      ::jsmalloc::GLogger::Instance().Flush();               \
+    }                                                        \
   } while (false);
 
-#define DEBUG_LOG(...) DEBUG_LOG_IF(true, __VA_ARGS__)
+#define DLOG_IF(level, cond, ...) DLOG_INTERNAL(level, cond, false, __VA_ARGS__)
+#define DLOG(level, ...)          DLOG_IF(level, true, __VA_ARGS__)
 
 #else
 
