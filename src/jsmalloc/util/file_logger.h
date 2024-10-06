@@ -41,8 +41,6 @@ class GLogger {
   static FileLogger logger_;
 };
 
-#ifndef NDEBUG
-
 #define DLOG_INTERNAL(log_level, log_predicate, flush, ...)  \
   do {                                                       \
     auto DEBUG = ::jsmalloc::FileLogger::Level::kDebug;      \
@@ -62,13 +60,6 @@ class GLogger {
   } while (false);
 
 #define DLOG_IF(level, cond, ...) DLOG_INTERNAL(level, cond, false, __VA_ARGS__)
-#define DLOG(level, ...)          DLOG_IF(level, true, __VA_ARGS__)
-
-#else
-
-#define DEBUG_LOG(...)
-#define DEBUG_LOG_IF(...)
-
-#endif
+#define DLOG(level, ...) DLOG_IF(level, true, __VA_ARGS__)
 
 }  // namespace jsmalloc

@@ -30,6 +30,12 @@ void FileLogger::Log(Level level, const char* fmt, ...) const {
   va_list args;
   char buf[512];
 
+#ifdef NDEBUG
+  if (level == Level::kDebug) {
+    return;
+  }
+#endif
+
   std::thread::id tid = std::this_thread::get_id();
 
   // It's kind of annoying to get the actual real thread id,
