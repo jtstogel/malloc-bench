@@ -101,10 +101,8 @@ void* (*__MALLOC_HOOK_VOLATILE __memalign_hook)(size_t, size_t, const void*) =
 }  // extern "C"
 
 void* operator new(size_t size) noexcept(false) {
-  if (size == 0) {
-    // TODO: Return a distinct non-null pointer here instead.
-    size = 1;
-  }
+  // TODO: Return a distinct non-null pointer here instead.
+  size = size == 0 ? 1 : size;
 
   void* res = bench::malloc(size);
   if (res == nullptr) {
@@ -119,10 +117,8 @@ void operator delete(void* p, size_t size) noexcept {
   bench::free(p, size);
 }
 void* operator new[](size_t size) noexcept(false) {
-  if (size == 0) {
-    // TODO: Return a distinct non-null pointer here instead.
-    size = 1;
-  }
+  // TODO: Return a distinct non-null pointer here instead.
+  size = size == 0 ? 1 : size;
 
   void* res = bench::malloc(size);
   if (res == nullptr) {
@@ -137,9 +133,15 @@ void operator delete[](void* p, size_t size) noexcept {
   bench::free(p, size);
 }
 void* operator new(size_t size, const std::nothrow_t&) noexcept {
+  // TODO: Return a distinct non-null pointer here instead.
+  size = size == 0 ? 1 : size;
+
   return bench::malloc(size);
 }
 void* operator new[](size_t size, const std::nothrow_t&) noexcept {
+  // TODO: Return a distinct non-null pointer here instead.
+  size = size == 0 ? 1 : size;
+
   return bench::malloc(size);
 }
 void operator delete(void* p, const std::nothrow_t&) noexcept {
@@ -150,10 +152,8 @@ void operator delete[](void* p, const std::nothrow_t&) noexcept {
 }
 
 void* operator new(size_t size, std::align_val_t alignment) noexcept(false) {
-  if (size == 0) {
-    // TODO: Return a distinct non-null pointer here instead.
-    size = 1;
-  }
+  // TODO: Return a distinct non-null pointer here instead.
+  size = size == 0 ? 1 : size;
 
   void* res = bench::malloc(size, static_cast<size_t>(alignment));
   if (res == nullptr) {
@@ -163,6 +163,9 @@ void* operator new(size_t size, std::align_val_t alignment) noexcept(false) {
 }
 void* operator new(size_t size, std::align_val_t alignment,
                    const std::nothrow_t&) noexcept {
+  // TODO: Return a distinct non-null pointer here instead.
+  size = size == 0 ? 1 : size;
+
   return bench::malloc(size, static_cast<size_t>(alignment));
 }
 void operator delete(void* p, std::align_val_t alignment) noexcept {
@@ -177,10 +180,8 @@ void operator delete(void* p, size_t size,
   bench::free(p, size, static_cast<size_t>(alignment));
 }
 void* operator new[](size_t size, std::align_val_t alignment) noexcept(false) {
-  if (size == 0) {
-    // TODO: Return a distinct non-null pointer here instead.
-    size = 1;
-  }
+  // TODO: Return a distinct non-null pointer here instead.
+  size = size == 0 ? 1 : size;
 
   void* res = bench::malloc(size, static_cast<size_t>(alignment));
   if (res == nullptr) {
@@ -190,6 +191,9 @@ void* operator new[](size_t size, std::align_val_t alignment) noexcept(false) {
 }
 void* operator new[](size_t size, std::align_val_t alignment,
                      const std::nothrow_t&) noexcept {
+  // TODO: Return a distinct non-null pointer here instead.
+  size = size == 0 ? 1 : size;
+
   return bench::malloc(size, static_cast<size_t>(alignment));
 }
 void operator delete[](void* p, std::align_val_t alignment) noexcept {
