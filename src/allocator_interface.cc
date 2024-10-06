@@ -41,7 +41,7 @@ void* malloc(size_t size, size_t alignment = 0) {
 
   void* ptr = jsmalloc::malloc(size, alignment);
   DLOG(DEBUG, "malloc(%zu, alignment=%zu) = %p\n", size, alignment, ptr);
-  if (ptr == nullptr) {
+  if (ptr == nullptr && size > 0) {
     DLOG(ERROR, "ERROR: malloc(%zu, alignment=%zu) = nullptr\n", size,
          alignment);
   }
