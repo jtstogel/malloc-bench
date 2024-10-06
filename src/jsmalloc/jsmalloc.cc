@@ -77,7 +77,7 @@ void initialize_heap(MemRegionAllocator& allocator) {
     std::cerr << "Failed to initialize small block heap" << std::endl;
     std::exit(-1);
   }
-  small_block_heap.emplace(std::move(*small_block_heap));
+  g_small_block_heap.emplace(std::move(*small_block_heap));
 
   heap_globals.emplace(&allocator, &*g_small_block_heap, &*g_large_block_heap);
   heap_globals->Init();
