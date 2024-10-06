@@ -10,6 +10,8 @@ bool GLogger::opened_ = false;
 std::mutex GLogger::mu_;
 FileLogger GLogger::logger_;
 
+constexpr char kWriteErr[] = "Failed to log!";
+
 void FileLogger::Open(char const* file) {
   fd_ = open(file, O_CREAT | O_WRONLY | O_TRUNC,
              S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
@@ -41,13 +43,22 @@ void FileLogger::Log(Level level, const char* fmt, ...) const {
   // It's kind of annoying to get the actual thread ID or stack start,
   // so we just pick a consistent, probably unique value.
   size_t tid_value = std::hash<std::thread::id>{}(tid) & ((1 << 30) - 1);
-  int pos = std::sprintf(buf, "%s - tid:%zX - ", LevelString(level), tid_value);
+  int size =
+      std::sprintf(buf, "%s - tid:%zX - ", LevelString(level), tid_value);
 
   va_start(args, fmt);
-  pos += std::vsprintf(&buf[pos], fmt, args);
+  size += std::vsprintf(&buf[size], fmt, args);
   va_end(args);
 
-  write(fd_, buf, strlen(buf));
+  int written = 0;
+  while (written < size) {
+    ssize_t ret = write(fd_, &buf[written], size - written);
+    if (ret == -1) {
+      write(STDERR_FILENO, kWriteErr, sizeof(kWriteErr));
+      return;
+    }
+    written += ret;
+  }
 
   if (level == Level::kError) {
     fsync(fd_);
