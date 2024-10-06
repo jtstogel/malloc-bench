@@ -14,31 +14,31 @@ namespace bench {
 
 namespace {
 
-std::mutex mu;
-bool initialized = false;
+std::mutex g_mutex;
+bool g_initialized = false;
 
 }  // namespace
 
 void initialize_heap(HeapFactory& heap_factory) {
-  std::lock_guard l(mu);
+  std::lock_guard l(g_mutex);
   static jsmalloc::HeapFactoryAdaptor adaptor(&heap_factory);
   new (&adaptor) jsmalloc::HeapFactoryAdaptor(&heap_factory);
   jsmalloc::initialize_heap(adaptor);
-  initialized = true;
+  g_initialized = true;
 }
 
 void initialize() {
-  if (initialized) {
+  if (g_initialized) {
     return;
   }
-  initialized = true;
+  g_initialized = true;
 
   static jsmalloc::MMapMemRegionAllocator allocator;
   jsmalloc::initialize_heap(allocator);
 }
 
 void* malloc(size_t size, size_t alignment = 0) {
-  std::lock_guard l(mu);
+  std::lock_guard l(g_mutex);
   initialize();
 
   void* ptr = jsmalloc::malloc(size, alignment);
@@ -47,7 +47,7 @@ void* malloc(size_t size, size_t alignment = 0) {
 }
 
 void* calloc(size_t nmemb, size_t size) {
-  std::lock_guard l(mu);
+  std::lock_guard l(g_mutex);
   initialize();
 
   void* ptr = jsmalloc::calloc(nmemb, size);
@@ -56,7 +56,7 @@ void* calloc(size_t nmemb, size_t size) {
 }
 
 void* realloc(void* ptr, size_t size) {
-  std::lock_guard l(mu);
+  std::lock_guard l(g_mutex);
   initialize();
 
   void* new_ptr = jsmalloc::realloc(ptr, size);
@@ -65,7 +65,7 @@ void* realloc(void* ptr, size_t size) {
 }
 
 void free(void* ptr, size_t size = 0, size_t alignment = 0) {
-  std::lock_guard l(mu);
+  std::lock_guard l(g_mutex);
   initialize();
 
   DEBUG_LOG("free(%p)\n", ptr);
@@ -73,7 +73,7 @@ void free(void* ptr, size_t size = 0, size_t alignment = 0) {
 }
 
 size_t get_size(void* ptr) {
-  std::lock_guard l(mu);
+  std::lock_guard l(g_mutex);
   initialize();
 
   return jsmalloc::get_size(ptr);
