@@ -1,5 +1,8 @@
 #include "src/jsmalloc/util/file_logger.h"
 
+#include <cstdarg>
+#include <cstdio>
+
 namespace jsmalloc {
 
 bool GLogger::opened_ = false;
@@ -11,25 +14,31 @@ void FileLogger::Open(char const* file) {
              S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 }
 
-void FileLogger::Log(const char* txt) const {
-  write(fd_, txt, strlen(txt));
+void FileLogger::Log(const char* fmt, ...) const {
+  va_list args;
+  va_start(args, fmt);
+  char buf[256];
+  std::vsprintf(buf, fmt, args);
+  va_end(args);
+
+  write(fd_, buf, strlen(buf));
 }
 
-void GLogger::Open(char const* file) {
+void GLogger::Open() {
   std::lock_guard l(mu_);
   if (opened_) {
     return;
   }
   opened_ = true;
+
+  char file[256];
+  std::sprintf(file, "/tmp/glogger-%d.txt", ::getpid());
   logger_.Open(file);
 }
 
-void GLogger::Log(const char* txt) {
-  char fname[256];
-  std::sprintf(fname, "/tmp/glogger-%d.txt", ::getpid());
-  Open(fname);
-
-  logger_.Log(txt);
+FileLogger& GLogger::Instance() {
+  Open();
+  return logger_;
 }
 
 }  // namespace jsmalloc

@@ -38,13 +38,7 @@ inline void* malloc(size_t size, size_t alignment = 0) {
   initialize();
 
   void* ptr = jsmalloc::malloc(size, alignment);
-
-#ifndef NLOG
-  char msg[256];
-  std::sprintf(msg, "malloc(%zu, %zu) = %p\n", size, alignment, ptr);
-  jsmalloc::GLogger::Log(msg);
-#endif
-
+  DEBUG_LOG("malloc(%zu, alignment=%zu) = %p\n", size, alignment, ptr);
   return ptr;
 }
 
@@ -53,13 +47,7 @@ inline void* calloc(size_t nmemb, size_t size) {
   initialize();
 
   void* ptr = jsmalloc::calloc(nmemb, size);
-
-#ifndef NLOG
-  char msg[256];
-  std::sprintf(msg, "calloc(%zu, %zu) = %p\n", nmemb, size, ptr);
-  jsmalloc::GLogger::Log(msg);
-#endif
-
+  DEBUG_LOG("calloc(%zu, %zu) = %p\n", nmemb, size, ptr);
   return ptr;
 }
 
@@ -68,12 +56,7 @@ inline void* realloc(void* ptr, size_t size) {
   initialize();
 
   void* new_ptr = jsmalloc::realloc(ptr, size);
-#ifndef NLOG
-  char msg[256];
-  std::sprintf(msg, "realloc(%p, %zu) = %p\n", ptr, size, new_ptr);
-  jsmalloc::GLogger::Log(msg);
-#endif
-
+  DEBUG_LOG("realloc(%p, %zu) = %p\n", ptr, size, new_ptr);
   return new_ptr;
 }
 
@@ -81,12 +64,7 @@ inline void free(void* ptr, size_t size = 0, size_t alignment = 0) {
   std::lock_guard l(mu);
   initialize();
 
-#ifndef NLOG
-  char msg[256];
-  std::sprintf(msg, "free(%p)\n", ptr);
-  jsmalloc::GLogger::Log(msg);
-#endif
-
+  DEBUG_LOG("free(%p)\n", ptr);
   return jsmalloc::free(ptr, size, alignment);
 }
 

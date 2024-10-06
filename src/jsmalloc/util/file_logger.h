@@ -15,7 +15,9 @@ class FileLogger {
  public:
   void Open(char const* file);
 
-  void Log(const char* txt) const;
+  void Log(const char* fmt, ...) const;
+
+  void LogVariadicArgs(const char* fmt, va_list args) const;
 
  private:
   int fd_ = 0;
@@ -23,14 +25,35 @@ class FileLogger {
 
 class GLogger {
  public:
-  static void Log(const char* txt);
+  static FileLogger& Instance();
 
  private:
-  static void Open(char const* file);
+  static void Open();
 
   static bool opened_;
   static std::mutex mu_;
   static FileLogger logger_;
 };
+
+#ifndef NDEBUG
+
+#define DEBUG_LOG(...)                                \
+  do {                                                \
+    ::jsmalloc::GLogger::Instance().Log(__VA_ARGS__); \
+  } while (false);
+
+#define DEBUG_LOG_IF(cond, ...)                         \
+  do {                                                  \
+    if (cond) {                                         \
+      ::jsmalloc::GLogger::Instance().Log(__VA_ARGS__); \
+    }                                                   \
+  } while (false);
+
+#else
+
+#define DEBUG_LOG(...)
+#define DEBUG_LOG_IF(...)
+
+#endif
 
 }  // namespace jsmalloc

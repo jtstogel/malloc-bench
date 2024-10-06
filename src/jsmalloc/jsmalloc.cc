@@ -11,6 +11,7 @@
 #include "src/jsmalloc/blocks/sentinel_block_allocator.h"
 #include "src/jsmalloc/blocks/small_block_allocator.h"
 #include "src/jsmalloc/util/assert.h"
+#include "src/jsmalloc/util/file_logger.h"
 #include "src/jsmalloc/util/twiddle.h"
 
 namespace jsmalloc {
@@ -42,7 +43,8 @@ class HeapGlobals {
  public:
   explicit HeapGlobals(MemRegionAllocator* allocator,
                        MemRegion* small_block_heap, MemRegion* large_block_heap)
-      : large_block_heap_(allocator, large_block_heap),
+      : large_block_region_(large_block_heap),
+        large_block_heap_(allocator, large_block_heap),
         large_block_allocator_(large_block_heap_.FreeBlockAllocator()),
         small_block_region_(small_block_heap),
         small_block_allocator_(allocator, small_block_heap) {}
@@ -51,6 +53,7 @@ class HeapGlobals {
     large_block_heap_.Init();
   }
 
+  MemRegion* large_block_region_;
   FreeBlockHeap large_block_heap_;
   blocks::LargeBlockAllocator large_block_allocator_;
   MemRegion* small_block_region_;
@@ -129,6 +132,10 @@ void* realloc(void* ptr, size_t size) {
     }
   }
 
+  DEBUG_LOG_IF(!heap_globals->large_block_region_->Contains(ptr) &&
+                   !heap_globals->small_block_region_->Contains(ptr),
+               "free() called with unmapped ptr");
+
   return default_realloc(ptr, size);
 }
 
@@ -141,6 +148,10 @@ void free(void* ptr, size_t, size_t) {
     heap_globals->small_block_allocator_.Free(ptr);
     return;
   }
+
+  DEBUG_LOG_IF(!heap_globals->large_block_region_->Contains(ptr),
+               "free() called with unmapped ptr");
+
   heap_globals->large_block_allocator_.Free(ptr);
 }
 
