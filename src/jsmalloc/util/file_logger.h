@@ -37,17 +37,14 @@ class GLogger {
 
 #ifndef NDEBUG
 
-#define DEBUG_LOG(...)                                \
-  do {                                                \
-    ::jsmalloc::GLogger::Instance().Log(__VA_ARGS__); \
-  } while (false);
-
 #define DEBUG_LOG_IF(cond, ...)                         \
   do {                                                  \
     if (cond) {                                         \
       ::jsmalloc::GLogger::Instance().Log(__VA_ARGS__); \
     }                                                   \
   } while (false);
+
+#define DEBUG_LOG(...) DEBUG_LOG_IF(true, __VA_ARGS__)
 
 #else
 

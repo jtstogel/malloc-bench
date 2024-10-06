@@ -2,6 +2,7 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <ostream>
 
 namespace jsmalloc {
 
@@ -22,6 +23,7 @@ void FileLogger::Log(const char* fmt, ...) const {
   va_end(args);
 
   write(fd_, buf, strlen(buf));
+  fsync(fd_);
 }
 
 void GLogger::Open() {
