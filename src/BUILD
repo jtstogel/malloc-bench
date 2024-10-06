@@ -60,6 +60,7 @@ cc_library(
         ":mmap_heap",
         "//src/jsmalloc",
         "//src/jsmalloc:allocator",
+        "//src/jsmalloc/util:file_logger",
     ],
 )
 

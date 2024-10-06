@@ -8,6 +8,7 @@
 #include "src/heap_factory.h"
 #include "src/jsmalloc/allocator.h"
 #include "src/jsmalloc/jsmalloc.h"
+#include "src/jsmalloc/util/file_logger.h"
 
 namespace bench {
 
@@ -36,26 +37,55 @@ inline void* malloc(size_t size, size_t alignment = 0) {
   std::lock_guard l(mu);
   initialize();
 
-  return jsmalloc::malloc(size, alignment);
+  void* ptr = jsmalloc::malloc(size, alignment);
+
+#ifndef NLOG
+  char msg[256];
+  std::sprintf(msg, "malloc(%zu, %zu) = %p\n", size, alignment, ptr);
+  jsmalloc::GLogger::Log(msg);
+#endif
+
+  return ptr;
 }
 
 inline void* calloc(size_t nmemb, size_t size) {
   std::lock_guard l(mu);
   initialize();
 
-  return jsmalloc::calloc(nmemb, size);
+  void* ptr = jsmalloc::calloc(nmemb, size);
+
+#ifndef NLOG
+  char msg[256];
+  std::sprintf(msg, "calloc(%zu, %zu) = %p\n", nmemb, size, ptr);
+  jsmalloc::GLogger::Log(msg);
+#endif
+
+  return ptr;
 }
 
 inline void* realloc(void* ptr, size_t size) {
   std::lock_guard l(mu);
   initialize();
 
-  return jsmalloc::realloc(ptr, size);
+  void* new_ptr = jsmalloc::realloc(ptr, size);
+#ifndef NLOG
+  char msg[256];
+  std::sprintf(msg, "realloc(%p, %zu) = %p\n", ptr, size, new_ptr);
+  jsmalloc::GLogger::Log(msg);
+#endif
+
+  return new_ptr;
 }
 
 inline void free(void* ptr, size_t size = 0, size_t alignment = 0) {
   std::lock_guard l(mu);
   initialize();
+
+#ifndef NLOG
+  char msg[256];
+  std::sprintf(msg, "free(%p)\n", ptr);
+  jsmalloc::GLogger::Log(msg);
+#endif
 
   return jsmalloc::free(ptr, size, alignment);
 }

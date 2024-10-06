@@ -11,7 +11,6 @@
 #include "src/jsmalloc/blocks/sentinel_block_allocator.h"
 #include "src/jsmalloc/blocks/small_block_allocator.h"
 #include "src/jsmalloc/util/assert.h"
-#include "src/jsmalloc/util/file_logger.h"
 #include "src/jsmalloc/util/twiddle.h"
 
 namespace jsmalloc {
@@ -89,12 +88,6 @@ void* malloc(size_t size, size_t alignment) {
     return nullptr;
   }
 
-#ifndef NLOG
-  char l[256];
-  std::sprintf(l, "malloc(%zu, %zu)", size, alignment);
-  GLogger::Log(l);
-#endif
-
   alignment = alignment == 0 ? 1 : alignment;
   DCHECK_EQ(std::popcount(alignment), 1);
 
@@ -129,12 +122,6 @@ void* default_realloc(void* ptr, size_t size) {
 }
 
 void* realloc(void* ptr, size_t size) {
-#ifndef NLOG
-  char l[256];
-  std::sprintf(l, "realloc(%p, %zu)", ptr, size);
-  GLogger::Log(l);
-#endif
-
   if (heap_globals->small_block_region_->Contains(ptr)) {
     void* new_ptr = heap_globals->small_block_allocator_.Realloc(ptr, size);
     if (new_ptr != nullptr) {
@@ -149,12 +136,6 @@ void free(void* ptr, size_t, size_t) {
   if (ptr == nullptr) {
     return;
   }
-
-#ifndef NLOG
-  char l[256];
-  std::sprintf(l, "free(%p)", ptr);
-  GLogger::Log(l);
-#endif
 
   if (heap_globals->small_block_region_->Contains(ptr)) {
     heap_globals->small_block_allocator_.Free(ptr);
