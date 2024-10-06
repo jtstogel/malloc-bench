@@ -2,6 +2,7 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <thread>
 
 namespace jsmalloc {
 
@@ -14,11 +15,30 @@ void FileLogger::Open(char const* file) {
              S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 }
 
+char const* LevelString(FileLogger::Level l) {
+  switch (l) {
+    case FileLogger::Level::kDebug:
+      return "DEBUG";
+    case FileLogger::Level::kInfo:
+      return "INFO";
+    case FileLogger::Level::kError:
+      return "ERROR";
+  }
+}
+
 void FileLogger::Log(Level level, const char* fmt, ...) const {
   va_list args;
+  char buf[512];
+
+  std::thread::id tid = std::this_thread::get_id();
+
+  // It's kind of annoying to get the actual real thread id,
+  // so just get a consistent, probably unique value.
+  size_t tid_value = std::hash<std::thread::id>{}(tid) & ((1 << 30) - 1);
+  int pos = std::sprintf(buf, "%s - tid:%zx - ", LevelString(level), tid_value);
+
   va_start(args, fmt);
-  char buf[256];
-  std::vsprintf(buf, fmt, args);
+  std::vsprintf(&buf[pos], fmt, args);
   va_end(args);
 
   write(fd_, buf, strlen(buf));
